@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     id("com.google.devtools.ksp") version "2.0.21-1.0.27" apply false
     kotlin("plugin.serialization") version "1.9.10"
+    alias(libs.plugins.google.gms.google.services)
 }
 
 android {
@@ -53,6 +54,12 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.firebase.auth)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.database)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -71,6 +78,9 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
+
+    implementation ("androidx.lifecycle:lifecycle-livedata-ktx:2.5.1")
 
     // Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
@@ -87,6 +97,22 @@ dependencies {
     // Hilt
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
     implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.0")
+
+
+    implementation("com.google.android.gms:play-services-auth:21.3.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.2.0")
+
+
+    // Jetpack Compose
+    implementation ("androidx.compose.ui:ui:1.4.0") // or the latest version you are using
+    implementation ("androidx.compose.material3:material3:1.0.0") // or the latest version
+
+    // LiveData and Compose integration
+    implementation ("androidx.compose.runtime:runtime-livedata:1.4.0") // Make sure this is included
+
+    // ViewModel and LiveData dependencies
+    implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.0")
+
 
 
 }

@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "818292442267",
+    "project_id": "inspiculture88",
+    "storage_bucket": "inspiculture88.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:818292442267:android:d161a15905bf0f5b6a323e",
+        "android_client_info": {
+          "package_name": "com.example.inspiculture"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "818292442267-78rjvgl1fmamtvdu2qc0kglq0a9q4ac3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.inspiculture",
+            "certificate_hash": "c65cdc67c295fa548d8c5d96a9fef4ad13c2db8e"
+          }
+        },
+        {
+          "client_id": "818292442267-h4orf4jevj35aegldpa3dulpv9lfj8jr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBPxumGZBsy-zaAx0HRo7TIrxJL5LXFssc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "818292442267-h4orf4jevj35aegldpa3dulpv9lfj8jr.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

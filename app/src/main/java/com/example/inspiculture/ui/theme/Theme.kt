@@ -86,7 +86,6 @@ fun MyButtonWithIcon(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = White // icon color
             )
 
             Spacer(modifier = Modifier.width(8.dp))
