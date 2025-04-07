@@ -20,7 +20,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -64,7 +64,7 @@ fun MyButton(
 @Composable
 fun MyButtonWithIcon(
     text: String,
-    icon: ImageVector,
+    icon: Painter,  // Use Painter for images or SVGs
     onClick: () -> Unit,
     width: Dp = 200.dp,
     height: Dp = 50.dp
@@ -84,7 +84,7 @@ fun MyButtonWithIcon(
             horizontalArrangement = Arrangement.Center
         ) {
             Icon(
-                imageVector = icon,
+                painter = icon,  // Use painter for the icon
                 contentDescription = null,
             )
 
@@ -97,7 +97,6 @@ fun MyButtonWithIcon(
         }
     }
 }
-
 
 
 @Composable

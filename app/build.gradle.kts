@@ -113,6 +113,7 @@ dependencies {
     // ViewModel and LiveData dependencies
     implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.0")
 
+    implementation("com.google.accompanist:accompanist-swiperefresh:0.33.2-alpha")
 
 
 }

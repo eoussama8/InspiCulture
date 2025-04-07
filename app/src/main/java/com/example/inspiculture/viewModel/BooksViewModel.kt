@@ -33,6 +33,10 @@ class BooksViewModel : ViewModel() {
     init {
         fetchBooks(currentQuery)
     }
+    fun refreshBooks() {
+        fetchBooks(currentQuery)
+    }
+
 
     fun searchBooks(query: String) {
         currentQuery = if (query.isNotBlank()) query else "book"
