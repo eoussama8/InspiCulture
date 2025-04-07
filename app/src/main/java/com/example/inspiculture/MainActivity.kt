@@ -31,6 +31,7 @@ import com.google.android.gms.common.api.ApiException
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.inspiculture.Retrofite.Books.Book
 import androidx.compose.runtime.livedata.observeAsState
+import com.example.inspiculture.viewModel.ShowsViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 
 class MainActivity : ComponentActivity() {
@@ -63,8 +64,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             InspiCultureTheme {
                 var selectedTab by remember { mutableStateOf(0) }
-
                 val booksViewModel: BooksViewModel = viewModel()
+                val showsViewModel: ShowsViewModel = viewModel()
                 // Observe Firebase authentication state
                 auth.addAuthStateListener { authState ->
                     currentUser = authState.currentUser
@@ -82,7 +83,7 @@ class MainActivity : ComponentActivity() {
                         when (selectedTab) {
                             0 -> HomeScreen()
                             1 -> BooksScreen(viewModel = booksViewModel)
-                            2 -> ShowsScreen()
+                            2 -> ShowsScreen(viewModel = showsViewModel)
                             3 -> MusicScreen()
                             4 -> SettingsScreen()
                         }
