@@ -117,5 +117,7 @@ dependencies {
 
     implementation("com.google.accompanist:accompanist-swiperefresh:0.33.2-alpha")
 
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+
 
 }

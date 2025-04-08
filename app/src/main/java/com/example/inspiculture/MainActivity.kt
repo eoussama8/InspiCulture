@@ -9,11 +9,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
+
 import com.example.inspiculture.BooksScreen.BooksScreen
 import com.example.inspiculture.HomeScreen.HomeScreen
 import com.example.inspiculture.MusicScreen.MusicScreen
@@ -31,20 +28,27 @@ import com.google.android.gms.common.api.ApiException
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.inspiculture.Retrofite.Books.Book
 import androidx.compose.runtime.livedata.observeAsState
+import com.example.inspiculture.data.ThemePreferences
 import com.example.inspiculture.viewModel.ShowsViewModel
+import com.example.inspiculture.viewModel.MusicViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import javax.inject.Inject
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var auth: FirebaseAuth
     private lateinit var googleSignInClient: GoogleSignInClient
-
+    private lateinit var themePreferences: ThemePreferences
+    @Inject lateinit var booksViewModel: BooksViewModel
+    @Inject lateinit var showsViewModel: ShowsViewModel
+    @Inject lateinit var musicViewModel: MusicViewModel
     var currentUser by mutableStateOf<FirebaseUser?>(null)
 
     private val signInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
         handleSignInResult(task)
     }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,36 +64,34 @@ class MainActivity : ComponentActivity() {
             .build()
 
         googleSignInClient = GoogleSignIn.getClient(this, gso)
+        themePreferences = ThemePreferences(this)
 
         setContent {
-            InspiCultureTheme {
+            InspiCultureTheme(themePreferences = themePreferences) {
                 var selectedTab by remember { mutableStateOf(0) }
-                val booksViewModel: BooksViewModel = viewModel()
-                val showsViewModel: ShowsViewModel = viewModel()
-                // Observe Firebase authentication state
+                booksViewModel  = viewModel()
+                showsViewModel  = viewModel()
+                musicViewModel =viewModel()
                 auth.addAuthStateListener { authState ->
                     currentUser = authState.currentUser
                 }
 
                 Column(modifier = Modifier.fillMaxSize()) {
-                    // Add the EnhancedTopBar with sign-in functionality
                     EnhancedTopBar(
                         user = currentUser,
                         signInAction = { signIn() }
                     )
 
                     Box(modifier = Modifier.weight(1f)) {
-                        // Display different screens based on selectedTab
                         when (selectedTab) {
                             0 -> HomeScreen()
                             1 -> BooksScreen(viewModel = booksViewModel)
                             2 -> ShowsScreen(viewModel = showsViewModel)
-                            3 -> MusicScreen()
-                            4 -> SettingsScreen()
+                            3 -> MusicScreen(viewModel = musicViewModel)
+                            4 -> SettingsScreen(themePreferences = themePreferences) // Pass themePreferences here
                         }
                     }
 
-                    // Bottom navigation bar
                     EnhancedTabNavigation(
                         selectedTab = selectedTab,
                         onTabSelected = { index -> selectedTab = index }
@@ -98,7 +100,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
     private fun signIn() {
         val signInIntent = googleSignInClient.signInIntent
         signInLauncher.launch(signInIntent)
@@ -127,35 +128,3 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable
-fun SignInScreen(onSignInClick: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Button(onClick = onSignInClick) {
-            Text(text = "Sign In with Google")
-        }
-    }
-}
-
-@Composable
-fun UserProfileScreen(user: FirebaseUser) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        AsyncImage(
-            model = user.photoUrl,
-            contentDescription = "Profile Picture",
-            modifier = Modifier.size(100.dp)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(text = "Hello, ${user.displayName}", fontSize = 24.sp)
-        Text(text = "${user.email}", fontSize = 16.sp)
-    }
-}

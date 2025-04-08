@@ -18,22 +18,29 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.inspiculture.data.ThemeMode
+import com.example.inspiculture.data.ThemePreferences
 
 private val DarkColorScheme = darkColorScheme(
     primary = Black,
-    secondary = White,
+    onPrimary = White,
+    background = Black,
+    onBackground = White,
     tertiary = MainColor
 )
 
 private val LightColorScheme = lightColorScheme(
     primary = White,
-    secondary = Black,
+    onPrimary = Black,
+    background = White,
+    onBackground = Black,
     tertiary = MainColor
 )
 
@@ -101,18 +108,24 @@ fun MyButtonWithIcon(
 
 @Composable
 fun InspiCultureTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
+    themePreferences: ThemePreferences,
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
+    val themeMode = themePreferences.themeMode.collectAsState(initial = ThemeMode.SYSTEM).value
+
+    val isDarkTheme = when (themeMode) {
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+    }
+
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            if (isDarkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
-        darkTheme -> DarkColorScheme
+        isDarkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
 
@@ -122,3 +135,5 @@ fun InspiCultureTheme(
         content = content
     )
 }
+
+

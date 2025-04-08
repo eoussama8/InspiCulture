@@ -65,7 +65,6 @@ fun ShowsScreen(viewModel: ShowsViewModel) {
     var showSearch by remember { mutableStateOf(false) }
     var isGridView by remember { mutableStateOf(true) }
     val swipeRefreshState = rememberSwipeRefreshState(isLoading)
-
     val genreMap = genres.associateBy { it.id }.mapValues { it.value.name }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -91,62 +90,16 @@ fun ShowsScreen(viewModel: ShowsViewModel) {
 
         SwipeRefresh(
             state = swipeRefreshState,
-            onRefresh = { viewModel.refreshShows() },
-            modifier = Modifier.fillMaxSize()
+            onRefresh = { viewModel.refreshShows() }
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 if (errorMessage.isNotEmpty()) {
                     ErrorMessage(errorMessage)
+                } else if (shows.isEmpty() && !isLoading) {
+                    EmptyStateMessage(selectedCategory)
                 } else {
-                    val filteredShows = shows.filter { show ->
-                        val matchesCategory = selectedCategory == "All" ||
-                                (show.genreIds?.any { genreId ->
-                                    genreMap[genreId]?.equals(selectedCategory, ignoreCase = true) == true
-                                } == true) // 👈 make sure it's explicitly compared to true
-
-                        val matchesSearchQuery = show.title.contains(searchQuery, ignoreCase = true)
-
-                        matchesCategory && matchesSearchQuery
-                    }
-
-
-
-                    if (filteredShows.isEmpty() && !isLoading) {
-                        val message = buildString {
-                            if (searchQuery.isNotEmpty()) {
-                                append("No results for \"$searchQuery\"")
-                                if (selectedCategory != "All") {
-                                    append(" in \"$selectedCategory\" category")
-                                }
-                            } else if (selectedCategory != "All") {
-                                append("No shows found in \"$selectedCategory\" category")
-                            } else {
-                                append("No shows available")
-                            }
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(24.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = message,
-                                color = Color.Gray,
-                                fontSize = 16.sp
-                            )
-                        }
-                    } else {
-                        ShowsList(
-                            shows = filteredShows,
-                            isGridView = isGridView,
-                            genreMap = genreMap
-                        )
-                    }
-
+                    ShowsList(shows = shows, isGridView = isGridView, genreMap = genreMap)
                 }
-
                 if (isLoading) {
                     Box(
                         modifier = Modifier

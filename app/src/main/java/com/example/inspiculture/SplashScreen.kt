@@ -46,19 +46,23 @@ import com.example.inspiculture.ui.theme.InspiCultureTheme
 import com.example.inspiculture.ui.theme.MainColor
 import com.example.inspiculture.ui.theme.Typography
 import com.example.inspiculture.OnBoarding.OnBoardingActivity
+import com.example.inspiculture.data.ThemePreferences
 import kotlinx.coroutines.delay
 
 @SuppressLint("CustomSplashScreen")
-class SplashActivity: ComponentActivity() {
+class SplashActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val themePreferences = ThemePreferences(this) // <- Add this line
+
         setContent {
-            InspiCultureTheme{
+            InspiCultureTheme(themePreferences = themePreferences) { // <- Pass it in here
                 SplashScreen()
             }
         }
     }
 }
+
 
 @Composable
 fun SplashScreen() {
