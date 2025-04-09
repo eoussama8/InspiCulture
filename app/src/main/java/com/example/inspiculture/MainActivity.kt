@@ -16,7 +16,9 @@ import com.example.inspiculture.BooksScreen.BooksScreen
 import com.example.inspiculture.HomeScreen.HomeScreen
 import com.example.inspiculture.MusicScreen.MusicScreen
 import com.example.inspiculture.Retrofite.Books.Book
+import com.example.inspiculture.Retrofite.Shows.Show
 import com.example.inspiculture.SettingsScreen.SettingsScreen
+import com.example.inspiculture.ShowsScreen.ShowDetailsScreen
 import com.example.inspiculture.ShowsScreen.ShowsScreen
 import com.example.inspiculture.data.ThemePreferences
 import com.example.inspiculture.ui.theme.InspiCultureTheme
@@ -107,7 +109,12 @@ class MainActivity : ComponentActivity() {
                                             currentScreen = Screen.BookDetails(book)
                                         }
                                     )
-                                    2 -> ShowsScreen(viewModel = showsViewModel)
+                                    2 -> ShowsScreen(
+                                        viewModel = showsViewModel,
+                                        onDetailsClick = { show ->
+                                            currentScreen = Screen.ShowDetails(show)
+                                        }
+                                    )
                                     3 -> MusicScreen(viewModel = musicViewModel)
                                     4 -> SettingsScreen(themePreferences = themePreferences)
                                 }
@@ -118,6 +125,13 @@ class MainActivity : ComponentActivity() {
                                     onBackClick = {
                                         currentScreen = Screen.Main(selectedTab) // Return to previous tab
                                     }
+                                )
+                            }
+                            is Screen.ShowDetails -> {
+                                ShowDetailsScreen(
+                                    viewModel = showsViewModel,
+                                    show = screen.show,
+                                    onBackClick = { currentScreen = Screen.Main(selectedTab) }
                                 )
                             }
                         }
@@ -169,4 +183,5 @@ class MainActivity : ComponentActivity() {
 sealed class Screen {
     data class Main(val tabIndex: Int) : Screen()
     data class BookDetails(val book: Book) : Screen()
+    data class ShowDetails(val show: Show) : Screen() // Added for shows
 }

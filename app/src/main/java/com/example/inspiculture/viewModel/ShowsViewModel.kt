@@ -1,13 +1,9 @@
 package com.example.inspiculture.viewModel
 
-import androidx.lifecycle.ViewModel
-import com.example.inspiculture.Retrofite.Shows.RetrofitClient
-import com.example.inspiculture.Retrofite.Shows.Show
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.example.inspiculture.Retrofite.Shows.Genre
-import com.example.inspiculture.Retrofite.Shows.GenreResponse
-import com.example.inspiculture.Retrofite.Shows.ShowResponse
+import androidx.lifecycle.ViewModel
+import com.example.inspiculture.Retrofite.Shows.*
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -32,6 +28,10 @@ class ShowsViewModel : ViewModel() {
 
     private val _genres = MutableLiveData<List<Genre>>()
     val genres: LiveData<List<Genre>> = _genres
+
+    // New LiveData for detailed show information
+    private val _selectedShowDetails = MutableLiveData<ShowDetails?>()
+    val selectedShowDetails: LiveData<ShowDetails?> = _selectedShowDetails
 
     private val retrofitService = RetrofitClient.api
 
@@ -58,6 +58,7 @@ class ShowsViewModel : ViewModel() {
                     _errorMessage.value = "Failed to fetch shows: ${response.message()}"
                 }
             }
+
             override fun onFailure(call: Call<ShowResponse>, t: Throwable) {
                 _isLoading.value = false
                 _errorMessage.value = "Error: ${t.message}"
@@ -95,6 +96,7 @@ class ShowsViewModel : ViewModel() {
                     _errorMessage.value = "Failed to fetch genres: ${response.message()}"
                 }
             }
+
             override fun onFailure(call: Call<GenreResponse>, t: Throwable) {
                 _errorMessage.value = "Error: ${t.message}"
             }
@@ -105,5 +107,23 @@ class ShowsViewModel : ViewModel() {
         fetchShows()
     }
 
+    // New function to fetch detailed show information
+    fun fetchShowDetails(showId: Int) {
+        _isLoading.value = true
+        retrofitService.getShowDetails(showId).enqueue(object : Callback<ShowDetails> {
+            override fun onResponse(call: Call<ShowDetails>, response: Response<ShowDetails>) {
+                _isLoading.value = false
+                if (response.isSuccessful) {
+                    _selectedShowDetails.value = response.body()
+                } else {
+                    _errorMessage.value = "Failed to fetch show details: ${response.message()}"
+                }
+            }
 
+            override fun onFailure(call: Call<ShowDetails>, t: Throwable) {
+                _isLoading.value = false
+                _errorMessage.value = "Error fetching show details: ${t.message}"
+            }
+        })
+    }
 }

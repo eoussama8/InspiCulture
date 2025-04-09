@@ -1,13 +1,5 @@
 package com.example.inspiculture.ShowsScreen
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.unit.dp
-import com.example.inspiculture.Retrofite.Shows.Show
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -26,6 +18,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -42,19 +35,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.inspiculture.R
-import com.example.inspiculture.Retrofite.Books.Book
+import com.example.inspiculture.Retrofite.Shows.Show
 import com.example.inspiculture.ui.theme.Black
 import com.example.inspiculture.ui.theme.Line
 import com.example.inspiculture.ui.theme.MainColor
 import com.example.inspiculture.ui.theme.White
-import com.example.inspiculture.viewModel.BooksViewModel
 import com.example.inspiculture.viewModel.ShowsViewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 
-
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ShowsScreen(viewModel: ShowsViewModel) {
+fun ShowsScreen(
+    viewModel: ShowsViewModel,
+    onDetailsClick: (Show) -> Unit = {} // Added callback for navigation
+) {
     val shows by viewModel.shows.observeAsState(emptyList())
     val isLoading by viewModel.isLoading.observeAsState(false)
     val errorMessage by viewModel.errorMessage.observeAsState("")
@@ -98,7 +93,12 @@ fun ShowsScreen(viewModel: ShowsViewModel) {
                 } else if (shows.isEmpty() && !isLoading) {
                     EmptyStateMessage(selectedCategory)
                 } else {
-                    ShowsList(shows = shows, isGridView = isGridView, genreMap = genreMap)
+                    ShowsList(
+                        shows = shows,
+                        isGridView = isGridView,
+                        genreMap = genreMap,
+                        onDetailsClick = onDetailsClick // Pass callback to ShowsList
+                    )
                 }
                 if (isLoading) {
                     Box(
@@ -128,7 +128,7 @@ fun ShowsTopAppBar(
         modifier = Modifier
             .fillMaxWidth()
             .height(if (showSearch) 100.dp else 60.dp),
-        color = MainColor,
+        color = MainColor
     ) {
         Column {
             Row(
@@ -185,7 +185,7 @@ fun ShowsTopAppBar(
                     value = searchQuery,
                     onValueChange = onSearchQueryChange,
                     placeholder = {
-                        Text("Search by title, director or genre", color = White.copy(alpha = 0.7f), fontSize = 14.sp)
+                        Text("Search by title, overview or genre", color = White.copy(alpha = 0.7f), fontSize = 14.sp)
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -241,7 +241,7 @@ fun ImprovedCategoriesRow(
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
             contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(24.dp) // More space between categories
+            horizontalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             items(categories) { category ->
                 CategoryText(
@@ -274,7 +274,6 @@ fun CategoryText(
             modifier = Modifier.padding(bottom = 2.dp)
         )
 
-        // Underline indicator when selected
         if (isSelected) {
             Box(
                 modifier = Modifier
@@ -291,7 +290,8 @@ fun CategoryText(
 fun ShowsList(
     shows: List<Show>,
     isGridView: Boolean,
-    genreMap: Map<Int, String> = emptyMap()
+    genreMap: Map<Int, String> = emptyMap(),
+    onDetailsClick: (Show) -> Unit = {} // Pass callback down
 ) {
     if (isGridView) {
         LazyVerticalGrid(
@@ -301,7 +301,7 @@ fun ShowsList(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(shows, key = { it.id }) { show ->
-                ImprovedShowGridItem(show = show, genreMap = genreMap)
+                ImprovedShowGridItem(show = show, genreMap = genreMap, onDetailsClick = { onDetailsClick(show) })
             }
         }
     } else {
@@ -313,26 +313,28 @@ fun ShowsList(
                 ImprovedShowListItem(
                     show = show,
                     genreMap = genreMap,
-                    modifier = Modifier.animateItemPlacement()
+                    modifier = Modifier.animateItemPlacement(),
+                    onDetailsClick = { onDetailsClick(show) }
                 )
             }
         }
     }
 }
 
-
 @Composable
-fun ImprovedShowGridItem(show: Show, genreMap: Map<Int, String>) {
-    var isSaved by remember { mutableStateOf(false) }
-
-    // Base URL for TMDb poster images
+fun ImprovedShowGridItem(
+    show: Show,
+    genreMap: Map<Int, String>,
+    onDetailsClick: () -> Unit // Added callback
+) {
+    var isSaved by remember { mutableStateOf(show.isFavoris) }
     val imageUrl = "https://image.tmdb.org/t/p/w500${show.poster_path}"
 
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .height(280.dp)
-            .clickable { /* Navigate to show details */ }
+            .clickable { onDetailsClick() }
             .border(
                 width = 1.dp,
                 color = Color.LightGray,
@@ -342,13 +344,11 @@ fun ImprovedShowGridItem(show: Show, genreMap: Map<Int, String>) {
         color = White
     ) {
         Column {
-            // Show Cover Image (takes up 2/3 of the card)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(180.dp)
             ) {
-                // Show cover image using AsyncImage from Coil
                 if (show.poster_path != null && show.poster_path.isNotEmpty()) {
                     AsyncImage(
                         model = imageUrl,
@@ -357,7 +357,6 @@ fun ImprovedShowGridItem(show: Show, genreMap: Map<Int, String>) {
                         modifier = Modifier.fillMaxSize()
                     )
                 } else {
-                    // Fallback image
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -365,7 +364,7 @@ fun ImprovedShowGridItem(show: Show, genreMap: Map<Int, String>) {
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            painter = painterResource(id = R.drawable.err), // Adjust fallback image resource
+                            painter = painterResource(id = R.drawable.err),
                             contentDescription = "No Image",
                             modifier = Modifier
                                 .size(60.dp)
@@ -375,7 +374,6 @@ fun ImprovedShowGridItem(show: Show, genreMap: Map<Int, String>) {
                     }
                 }
 
-                // Gradient overlay
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -390,7 +388,6 @@ fun ImprovedShowGridItem(show: Show, genreMap: Map<Int, String>) {
                         )
                 )
 
-                // Save button
                 IconButton(
                     onClick = { isSaved = !isSaved },
                     modifier = Modifier
@@ -409,7 +406,6 @@ fun ImprovedShowGridItem(show: Show, genreMap: Map<Int, String>) {
                 }
             }
 
-            // Show Details
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -425,7 +421,6 @@ fun ImprovedShowGridItem(show: Show, genreMap: Map<Int, String>) {
                         color = Black
                     )
 
-                    // Map genre IDs to genre names
                     val genreNames = show.genreIds?.mapNotNull { genreMap[it] }?.joinToString(", ")
                         ?: "Unknown Genre"
 
@@ -442,16 +437,21 @@ fun ImprovedShowGridItem(show: Show, genreMap: Map<Int, String>) {
     }
 }
 
-
 @Composable
-fun ImprovedShowListItem(show: Show, genreMap: Map<Int, String>, modifier: Modifier = Modifier) {
+fun ImprovedShowListItem(
+    show: Show,
+    genreMap: Map<Int, String>,
+    modifier: Modifier = Modifier,
+    onDetailsClick: () -> Unit // Added callback
+) {
     var isSaved by remember { mutableStateOf(show.isFavoris) }
+    val posterUrl = show.poster_path?.let { "https://image.tmdb.org/t/p/w500$it" }
 
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .height(140.dp)
-            .clickable { /* Navigate to show details */ }
+            .clickable { onDetailsClick() }
             .border(
                 width = 1.dp,
                 color = Color.LightGray,
@@ -461,14 +461,9 @@ fun ImprovedShowListItem(show: Show, genreMap: Map<Int, String>, modifier: Modif
         color = White
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
-
-            // Poster
             Box(modifier = Modifier
                 .width(100.dp)
                 .fillMaxHeight()) {
-
-                val posterUrl = show.poster_path?.let { "https://image.tmdb.org/t/p/w500$it" }
-
                 if (!posterUrl.isNullOrEmpty()) {
                     AsyncImage(
                         model = posterUrl,
@@ -493,7 +488,6 @@ fun ImprovedShowListItem(show: Show, genreMap: Map<Int, String>, modifier: Modif
                 }
             }
 
-            // Details
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -511,8 +505,6 @@ fun ImprovedShowListItem(show: Show, genreMap: Map<Int, String>, modifier: Modif
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-
-                    // Genre chips
                     show.genreIds?.take(2)?.mapNotNull { genreMap[it] }?.let { genres ->
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -531,7 +523,7 @@ fun ImprovedShowListItem(show: Show, genreMap: Map<Int, String>, modifier: Modif
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(
-                        onClick = { /* Navigate to details */ },
+                        onClick = onDetailsClick,
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Text(
@@ -560,7 +552,6 @@ fun ImprovedShowListItem(show: Show, genreMap: Map<Int, String>, modifier: Modif
         }
     }
 }
-
 
 @Composable
 fun MiniCategoryChip(category: String) {
@@ -601,7 +592,7 @@ fun ErrorMessage(message: String) {
                 color = MaterialTheme.colorScheme.error
             )
             Button(
-                onClick = { /* Retry loading books */ },
+                onClick = { /* Retry logic could be added here */ },
                 colors = ButtonDefaults.buttonColors(containerColor = MainColor)
             ) {
                 Text("Retry")
@@ -622,15 +613,17 @@ fun EmptyStateMessage(category: String) {
             modifier = Modifier.padding(16.dp)
         ) {
             Image(
-                painter = painterResource(id = R.drawable.empty),  // You'll need to add this drawable
-                contentDescription = "No Books Found",
+                painter = painterResource(id = R.drawable.empty), // Ensure this drawable exists
+                contentDescription = "No Shows Found",
                 modifier = Modifier.size(120.dp)
             )
             Text(
-                text = if (category == "All") "No books found" else "No books found in $category category",
+                text = if (category == "All") "No shows found" else "No shows found in $category category",
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
         }
     }
 }
+
+// New ShowDetailsScreen to display maximum details
