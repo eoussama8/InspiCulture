@@ -1,21 +1,5 @@
 package com.example.inspiculture.MusicScreen
 
-
-
-import com.example.inspiculture.R
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
-import com.example.inspiculture.Retrofite.Music.Track
-import com.example.inspiculture.ui.theme.Black
-import com.example.inspiculture.ui.theme.MainColor
-import com.example.inspiculture.ui.theme.White
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -37,14 +21,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.inspiculture.ui.theme.Line
+import com.example.inspiculture.R
+import com.example.inspiculture.Retrofite.Music.Track
+import com.example.inspiculture.ui.theme.*
 import com.example.inspiculture.viewModel.MusicViewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
@@ -88,13 +77,16 @@ fun MusicScreen(viewModel: MusicViewModel) {
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 if (errorMessage.isNotEmpty()) {
-                    ErrorMessage(errorMessage)
+                    ErrorMessage(
+                        message = errorMessage,
+                        onRetry = { viewModel.refreshTracks() }
+                    )
                 } else {
                     if (tracks.isEmpty() && !isLoading) {
                         EmptyStateMessage(selectedCategory)
                     } else {
                         TracksList(
-                            tracks = tracks, // Use tracks directly
+                            tracks = tracks,
                             isGridView = isGridView
                         )
                     }
@@ -316,13 +308,15 @@ fun TracksList(
         }
     }
 }
+
 @Composable
 fun TrackGridItem(track: Track) {
+    var isSaved by remember { mutableStateOf(false) }
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .height(220.dp)
-            .clickable { /* No details navigation */ },
+            .clickable { /* Add navigation or action here if needed */ },
         shape = RoundedCornerShape(12.dp),
         color = White,
         tonalElevation = 2.dp
@@ -335,7 +329,7 @@ fun TrackGridItem(track: Track) {
             ) {
                 if (track.album.images.isNotEmpty()) {
                     AsyncImage(
-                        model = track.album.images[0].url, // Use the first image
+                        model = track.album.images[0].url,
                         contentDescription = "Album Art",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop,
@@ -370,6 +364,24 @@ fun TrackGridItem(track: Track) {
                             )
                         )
                 )
+
+                // Save button in top-right corner
+                IconButton(
+                    onClick = { isSaved = !isSaved },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                        .size(32.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(
+                            id = if (isSaved) R.drawable.save else R.drawable.unsave
+                        ),
+                        contentDescription = if (isSaved) "Unsave" else "Save",
+                        modifier = Modifier.size(20.dp),
+                        tint = MainColor
+                    )
+                }
             }
             Column(
                 modifier = Modifier
@@ -377,20 +389,40 @@ fun TrackGridItem(track: Track) {
                     .padding(12.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = track.name,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    color = Black
-                )
-                Text(
-                    text = track.getArtistsString(),
-                    fontSize = 12.sp,
-                    color = Line,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Column {
+                    Text(
+                        text = track.name,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        color = Black
+                    )
+                    Text(
+                        text = track.getArtistsString(),
+                        fontSize = 12.sp,
+                        color = Line,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                // Details button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        onClick = { /* Navigate to track details */ },
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = "Details",
+                            color = MainColor,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
             }
         }
     }
@@ -398,11 +430,12 @@ fun TrackGridItem(track: Track) {
 
 @Composable
 fun TrackListItem(track: Track, modifier: Modifier = Modifier) {
+    var isSaved by remember { mutableStateOf(false) }
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .height(120.dp)
-            .clickable { /* No details navigation */ },
+            .clickable { /* Add navigation or action here if needed */ },
         shape = RoundedCornerShape(12.dp),
         color = White,
         tonalElevation = 2.dp
@@ -413,21 +446,31 @@ fun TrackListItem(track: Track, modifier: Modifier = Modifier) {
                     .width(100.dp)
                     .fillMaxHeight()
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Line.copy(alpha = 0.2f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.music),
-                        contentDescription = "Track Placeholder",
-                        modifier = Modifier.size(40.dp),
-                        tint = MainColor.copy(alpha = 0.5f)
+                if (track.album.images.isNotEmpty()) {
+                    AsyncImage(
+                        model = track.album.images[0].url,
+                        contentDescription = "Album Art",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                        placeholder = painterResource(id = R.drawable.music),
+                        error = painterResource(id = R.drawable.music)
                     )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Line.copy(alpha = 0.2f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.music),
+                            contentDescription = "Track Placeholder",
+                            modifier = Modifier.size(40.dp),
+                            tint = MainColor.copy(alpha = 0.5f)
+                        )
+                    }
                 }
             }
-
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -451,13 +494,46 @@ fun TrackListItem(track: Track, modifier: Modifier = Modifier) {
                         overflow = TextOverflow.Ellipsis
                     )
                 }
+
+                // Action row with Details and Save buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(
+                        onClick = { /* Navigate to track details */ },
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = "Details",
+                            color = MainColor,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { isSaved = !isSaved },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(
+                                id = if (isSaved) R.drawable.save else R.drawable.unsave
+                            ),
+                            contentDescription = if (isSaved) "Unsave" else "Save",
+                            modifier = Modifier.size(20.dp),
+                            tint = MainColor
+                        )
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-fun ErrorMessage(message: String) {
+fun ErrorMessage(message: String, onRetry: () -> Unit) {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -475,10 +551,11 @@ fun ErrorMessage(message: String) {
             Text(
                 text = "Error: $message",
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.error
+                color = MaterialTheme.colorScheme.error,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
             Button(
-                onClick = { /* Retry logic can be added */ },
+                onClick = onRetry,
                 colors = ButtonDefaults.buttonColors(containerColor = MainColor)
             ) {
                 Text("Retry")

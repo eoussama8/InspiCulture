@@ -12,19 +12,8 @@ data class Album(
     val name: String,
     val images: List<Image> // Add this
 )
-data class PlaylistResponse(
-    val playlists: Playlists
-)
 
-data class Playlists(
-    val items: List<Playlist>
-)
 
-data class Playlist(
-    val id: String,
-    val name: String,
-    val tracks: Tracks // Reuse Tracks from TrackResponse
-)
 data class Image( // New data class
     val url: String,
     val height: Int?,
@@ -64,3 +53,23 @@ data class Artist(
     val name: String
 )
 
+
+
+data class PlaylistResponse(
+    val playlists: Playlists
+)
+
+data class Playlists(
+    val items: List<Playlist>
+)
+
+data class Playlist(
+    val id: String,
+    val name: String,
+    val tracks: PlaylistTracks
+)
+
+data class PlaylistTracks(
+    val href: String, // URL to fetch full track list
+    val items: List<Track> // May be empty, depending on API response
+)

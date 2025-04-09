@@ -43,11 +43,12 @@ import com.example.inspiculture.viewModel.BooksViewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 
-
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun BooksScreen(viewModel: BooksViewModel) {
+fun BooksScreen(
+    viewModel: BooksViewModel,
+    onDetailsClick: (Book) -> Unit = {} // Added parameter for navigation
+) {
     val books by viewModel.books.observeAsState(emptyList())
     val isLoading by viewModel.isLoading.observeAsState(false)
     val errorMessage by viewModel.errorMessage.observeAsState("")
@@ -100,7 +101,8 @@ fun BooksScreen(viewModel: BooksViewModel) {
                     } else {
                         BooksList(
                             books = filteredBooks,
-                            isGridView = isGridView
+                            isGridView = isGridView,
+                            onDetailsClick = onDetailsClick // Pass the callback to BooksList
                         )
                     }
                 }
@@ -135,7 +137,6 @@ fun BooksTopAppBar(
             .fillMaxWidth()
             .height(if (showSearch) 100.dp else 60.dp), // Reduced height
         color = MainColor,
-
     ) {
         Column {
             Row(
@@ -182,7 +183,6 @@ fun BooksTopAppBar(
                             modifier = Modifier.size(20.dp) // Smaller icon
                         )
                     }
-
                 }
             }
 
@@ -299,7 +299,8 @@ fun CategoryText(
 @Composable
 fun BooksList(
     books: List<Book>,
-    isGridView: Boolean
+    isGridView: Boolean,
+    onDetailsClick: (Book) -> Unit = {} // Pass the callback down
 ) {
     if (isGridView) {
         LazyVerticalGrid(
@@ -309,7 +310,7 @@ fun BooksList(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(books) { book ->
-                ImprovedBookGridItem(book)
+                ImprovedBookGridItem(book, onDetailsClick = { onDetailsClick(book) })
             }
         }
     } else {
@@ -320,7 +321,8 @@ fun BooksList(
             items(books, key = { it.id ?: it.title }) { book ->
                 ImprovedBookListItem(
                     book = book,
-                    modifier = Modifier.animateItemPlacement()
+                    modifier = Modifier.animateItemPlacement(),
+                    onDetailsClick = { onDetailsClick(book) }
                 )
             }
         }
@@ -328,13 +330,13 @@ fun BooksList(
 }
 
 @Composable
-fun ImprovedBookGridItem(book: Book) {
+fun ImprovedBookGridItem(book: Book, onDetailsClick: () -> Unit) {
     var isSaved by remember { mutableStateOf(false) }
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .height(280.dp)
-            .clickable { /* Navigate to book details */ }
+            .clickable { onDetailsClick() }
             .border(
                 width = 1.dp,
                 color = Color.LightGray,
@@ -438,8 +440,11 @@ fun ImprovedBookGridItem(book: Book) {
 }
 
 @Composable
-fun ImprovedBookListItem(book: Book, modifier: Modifier = Modifier) {
-    // Using Surface with border instead of Card with elevation
+fun ImprovedBookListItem(
+    book: Book,
+    modifier: Modifier = Modifier,
+    onDetailsClick: () -> Unit
+) {
     var isSaved by remember { mutableStateOf(false) }
     Surface(
         modifier = modifier
@@ -455,7 +460,6 @@ fun ImprovedBookListItem(book: Book, modifier: Modifier = Modifier) {
         color = White
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
-            // Book Cover
             Box(modifier = Modifier
                 .width(100.dp)
                 .fillMaxHeight()) {
@@ -468,7 +472,6 @@ fun ImprovedBookListItem(book: Book, modifier: Modifier = Modifier) {
                         modifier = Modifier.fillMaxSize()
                     )
                 } else {
-                    // Fallback image
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -486,8 +489,6 @@ fun ImprovedBookListItem(book: Book, modifier: Modifier = Modifier) {
                     }
                 }
             }
-
-            // Book details
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -503,7 +504,6 @@ fun ImprovedBookListItem(book: Book, modifier: Modifier = Modifier) {
                         color = Black
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-
                     Text(
                         text = book.authors?.joinToString(", ") ?: "Unknown Author",
                         fontSize = 14.sp,
@@ -511,8 +511,6 @@ fun ImprovedBookListItem(book: Book, modifier: Modifier = Modifier) {
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-
-                    // Show categories with small chips if available
                     book.categories?.take(2)?.let { bookCategories ->
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -524,15 +522,13 @@ fun ImprovedBookListItem(book: Book, modifier: Modifier = Modifier) {
                         }
                     }
                 }
-
-                // Action row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(
-                        onClick = { /* Navigate to details */ },
+                        onClick = onDetailsClick,
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Text(
@@ -542,7 +538,6 @@ fun ImprovedBookListItem(book: Book, modifier: Modifier = Modifier) {
                             fontWeight = FontWeight.Medium
                         )
                     }
-
                     IconButton(
                         onClick = { isSaved = !isSaved },
                         modifier = Modifier.size(32.dp)
@@ -561,7 +556,6 @@ fun ImprovedBookListItem(book: Book, modifier: Modifier = Modifier) {
         }
     }
 }
-
 
 @Composable
 fun MiniCategoryChip(category: String) {

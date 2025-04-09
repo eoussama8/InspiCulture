@@ -1,6 +1,5 @@
 package com.example.inspiculture.viewModel
 
-import android.R.attr.apiKey
 import androidx.lifecycle.ViewModel
 import com.example.inspiculture.Retrofite.Shows.RetrofitClient
 import com.example.inspiculture.Retrofite.Shows.Show
@@ -105,4 +104,6 @@ class ShowsViewModel : ViewModel() {
     fun refreshShows() {
         fetchShows()
     }
+
+
 }

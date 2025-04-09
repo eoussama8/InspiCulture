@@ -10,28 +10,27 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.inspiculture.BooksScreen.BookDetailsScreen
 import com.example.inspiculture.BooksScreen.BooksScreen
 import com.example.inspiculture.HomeScreen.HomeScreen
 import com.example.inspiculture.MusicScreen.MusicScreen
+import com.example.inspiculture.Retrofite.Books.Book
 import com.example.inspiculture.SettingsScreen.SettingsScreen
 import com.example.inspiculture.ShowsScreen.ShowsScreen
+import com.example.inspiculture.data.ThemePreferences
 import com.example.inspiculture.ui.theme.InspiCultureTheme
 import com.example.inspiculture.viewModel.BooksViewModel
+import com.example.inspiculture.viewModel.MusicViewModel
+import com.example.inspiculture.viewModel.ShowsViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.GoogleAuthProvider
-import com.google.firebase.auth.FirebaseUser
-import com.google.android.gms.common.api.ApiException
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.inspiculture.Retrofite.Books.Book
-import androidx.compose.runtime.livedata.observeAsState
-import com.example.inspiculture.data.ThemePreferences
-import com.example.inspiculture.viewModel.ShowsViewModel
-import com.example.inspiculture.viewModel.MusicViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.GoogleAuthProvider
 import javax.inject.Inject
 
 class MainActivity : ComponentActivity() {
@@ -42,13 +41,13 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var booksViewModel: BooksViewModel
     @Inject lateinit var showsViewModel: ShowsViewModel
     @Inject lateinit var musicViewModel: MusicViewModel
+
     var currentUser by mutableStateOf<FirebaseUser?>(null)
 
     private val signInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
         handleSignInResult(task)
     }
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,9 +68,13 @@ class MainActivity : ComponentActivity() {
         setContent {
             InspiCultureTheme(themePreferences = themePreferences) {
                 var selectedTab by remember { mutableStateOf(0) }
-                booksViewModel  = viewModel()
-                showsViewModel  = viewModel()
-                musicViewModel =viewModel()
+                booksViewModel = viewModel()
+                showsViewModel = viewModel()
+                musicViewModel = viewModel()
+
+                // Screen state management
+                var currentScreen by remember { mutableStateOf<Screen>(Screen.Main(selectedTab)) }
+
                 auth.addAuthStateListener { authState ->
                     currentUser = authState.currentUser
                 }
@@ -83,23 +86,58 @@ class MainActivity : ComponentActivity() {
                     )
 
                     Box(modifier = Modifier.weight(1f)) {
-                        when (selectedTab) {
-                            0 -> HomeScreen()
-                            1 -> BooksScreen(viewModel = booksViewModel)
-                            2 -> ShowsScreen(viewModel = showsViewModel)
-                            3 -> MusicScreen(viewModel = musicViewModel)
-                            4 -> SettingsScreen(themePreferences = themePreferences) // Pass themePreferences here
+                        when (val screen = currentScreen) {
+                            is Screen.Main -> {
+                                when (screen.tabIndex) {
+                                    0 -> HomeScreen(
+                                        booksViewModel = booksViewModel,
+                                        showsViewModel = showsViewModel,
+                                        musicViewModel = musicViewModel,
+                                        onTabChange = { index ->
+                                            selectedTab = index
+                                            currentScreen = Screen.Main(index)
+                                        },
+                                        onDetailsClick = { id, type ->
+                                            Log.d("HomeScreen", "Details clicked: $type with id $id")
+                                        }
+                                    )
+                                    1 -> BooksScreen(
+                                        viewModel = booksViewModel,
+                                        onDetailsClick = { book ->
+                                            currentScreen = Screen.BookDetails(book)
+                                        }
+                                    )
+                                    2 -> ShowsScreen(viewModel = showsViewModel)
+                                    3 -> MusicScreen(viewModel = musicViewModel)
+                                    4 -> SettingsScreen(themePreferences = themePreferences)
+                                }
+                            }
+                            is Screen.BookDetails -> {
+                                BookDetailsScreen(
+                                    book = screen.book,
+                                    onBackClick = {
+                                        currentScreen = Screen.Main(selectedTab) // Return to previous tab
+                                    }
+                                )
+                            }
                         }
                     }
 
-                    EnhancedTabNavigation(
-                        selectedTab = selectedTab,
-                        onTabSelected = { index -> selectedTab = index }
-                    )
+                    // Show tab navigation only for the main screen
+                    if (currentScreen is Screen.Main) {
+                        EnhancedTabNavigation(
+                            selectedTab = selectedTab,
+                            onTabSelected = { index ->
+                                selectedTab = index
+                                currentScreen = Screen.Main(index)
+                            }
+                        )
+                    }
                 }
             }
         }
     }
+
     private fun signIn() {
         val signInIntent = googleSignInClient.signInIntent
         signInLauncher.launch(signInIntent)
@@ -119,8 +157,7 @@ class MainActivity : ComponentActivity() {
         auth.signInWithCredential(credential)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
-                    // Sign in success
-                    currentUser = auth.currentUser // Update the user state here
+                    currentUser = auth.currentUser
                 } else {
                     Log.w("MainActivity", "signInWithCredential:failure", task.exception)
                 }
@@ -128,3 +165,8 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+// Sealed class to represent different screens
+sealed class Screen {
+    data class Main(val tabIndex: Int) : Screen()
+    data class BookDetails(val book: Book) : Screen()
+}
