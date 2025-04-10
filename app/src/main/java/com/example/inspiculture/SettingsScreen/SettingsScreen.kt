@@ -91,7 +91,7 @@ fun SettingsScreen(
                             icon = Icons.Outlined.Language,
                             modifier = Modifier.weight(1f),
                             onClick = {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://yourwebsite.com"))
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://inspi-culture.vercel.app/"))
                                 context.startActivity(intent)
                             }
                         )
@@ -103,7 +103,7 @@ fun SettingsScreen(
                             onClick = {
                                 val intent = Intent(Intent.ACTION_SEND).apply {
                                     type = "text/plain"
-                                    putExtra(Intent.EXTRA_TEXT, "Check out InspiCulture app: https://yourwebsite.com")
+                                    putExtra(Intent.EXTRA_TEXT, "Check out InspiCulture app: https://https://inspi-culture.vercel.app/")
                                 }
                                 context.startActivity(Intent.createChooser(intent, "Share via"))
                             }
