@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -53,16 +54,15 @@ import kotlinx.coroutines.delay
 class SplashActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val themePreferences = ThemePreferences(this) // <- Add this line
+        val themePreferences = ThemePreferences(this)
 
         setContent {
-            InspiCultureTheme(themePreferences = themePreferences) { // <- Pass it in here
+            InspiCultureTheme(themePreferences = themePreferences) {
                 SplashScreen()
             }
         }
     }
 }
-
 
 @Composable
 fun SplashScreen() {
@@ -74,27 +74,24 @@ fun SplashScreen() {
 
     // Animations sequence
     LaunchedEffect(Unit) {
-        // Staggered animations
         logoAlpha.animateTo(1f, animationSpec = tween(700, easing = FastOutSlowInEasing))
         logoScale.animateTo(1f, animationSpec = spring(dampingRatio = 0.6f, stiffness = 100f))
         textAlpha.animateTo(1f, animationSpec = tween(500, easing = FastOutSlowInEasing))
         descriptionAlpha.animateTo(1f, animationSpec = tween(500, easing = FastOutSlowInEasing))
 
-        // Navigate after animations complete
         delay(1800)
         val intent = Intent(context, OnBoardingActivity::class.java)
         context.startActivity(intent)
         (context as? ComponentActivity)?.finish()
     }
 
-    // Solid white background
+    // Use MaterialTheme's background color for light/dark mode
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White),
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
-        // Content
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
@@ -119,15 +116,15 @@ fun SplashScreen() {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // App name with MainColor
+            // App name with MaterialTheme's onBackground color for contrast
             Text(
                 text = stringResource(id = R.string.app_name),
-                color = MainColor,
+                color = MaterialTheme.colorScheme.primary, // Adapts to light/dark mode
                 fontWeight = FontWeight.Bold,
                 fontSize = 32.sp,
                 letterSpacing = 1.2.sp,
                 style = Typography.labelSmall.copy(
-                    color = MainColor,
+                    color = MaterialTheme.colorScheme.primary,
                     fontSize = 16.sp
                 ),
                 modifier = Modifier.graphicsLayer {
@@ -137,22 +134,21 @@ fun SplashScreen() {
 
             Spacer(modifier = Modifier.height(56.dp))
 
-            // Enhanced loading animation with MainColor
+            // Loading animation with primary color from theme
             PulsingLoadingAnimation(
                 circleSize = 14.dp,
-                circleColor = MainColor.copy(alpha = 0.9f),
+                circleColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
                 travelDistance = 24.dp
             )
         }
     }
 }
 
-// Improved loading animation with pulsing effect
 @Composable
 fun PulsingLoadingAnimation(
     modifier: Modifier = Modifier,
     circleSize: Dp = 13.dp,
-    circleColor: Color = MainColor,
+    circleColor: Color = MaterialTheme.colorScheme.primary, // Use theme's primary color
     spacebetween: Dp = 12.dp,
     travelDistance: Dp = 20.dp
 ) {

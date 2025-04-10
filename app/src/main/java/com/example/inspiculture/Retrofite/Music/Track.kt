@@ -20,6 +20,21 @@ data class Image( // New data class
     val width: Int?
 )
 
+data class TrackDetails(
+    val id: String,
+    val name: String,
+    val artists: List<Artist>,
+    val album: Album,
+    val duration_ms: Int, // Duration in milliseconds
+    val popularity: Int?,
+    val preview_url: String?, // URL for 30-second preview
+    val external_urls: ExternalUrls?
+)
+
+data class ExternalUrls(
+    val spotify: String? // URL to Spotify page
+)
+
 data class Category(
     val id: String,
     val name: String

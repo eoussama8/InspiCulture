@@ -20,14 +20,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberImagePainter
-import com.example.inspiculture.ui.theme.Black
-import com.example.inspiculture.ui.theme.MainColor
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.delay
 
@@ -43,12 +40,16 @@ fun EnhancedTopBar(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 20.dp)
+            .background(MaterialTheme.colorScheme.background)
+
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(topBarHeight)
                 .padding(horizontal = 16.dp)
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.background)
                 .animateContentSize(
                     animationSpec = spring(
                         dampingRatio = Spring.DampingRatioMediumBouncy,
@@ -68,7 +69,7 @@ fun EnhancedTopBar(
                 Icon(
                     painter = painterResource(id = R.drawable.details),
                     contentDescription = "Menu",
-                    tint = Black,
+                    tint = MaterialTheme.colorScheme.onSurface, // Replace Black
                     modifier = Modifier
                         .size(24.dp)
                         .padding(2.dp)
@@ -115,7 +116,7 @@ fun EnhancedTopBar(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp
                     ),
-                    color = MainColor
+                    color = MaterialTheme.colorScheme.primary // Replace MainColor
                 )
             }
 
@@ -140,10 +141,10 @@ fun EnhancedTopBar(
                 .background(
                     brush = Brush.horizontalGradient(
                         colors = listOf(
-                            MainColor.copy(alpha = 0.5f),
-                            MainColor,
-                            MainColor,
-                            MainColor.copy(alpha = 0.5f)
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.5f), // Replace MainColor
+                            MaterialTheme.colorScheme.primary, // Replace MainColor
+                            MaterialTheme.colorScheme.primary, // Replace MainColor
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) // Replace MainColor
                         )
                     )
                 )
@@ -167,15 +168,15 @@ fun UserProfileItem(user: FirebaseUser) {
                 modifier = Modifier
                     .size(36.dp)
                     .clip(CircleShape)
-                    .border(1.dp, MainColor, CircleShape)
+                    .border(1.dp, MaterialTheme.colorScheme.primary, CircleShape) // Replace MainColor
             )
 
             // Online status indicator
             Box(
                 modifier = Modifier
                     .size(10.dp)
-                    .background(Color.Green, CircleShape)
-                    .border(1.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape) // Replace Color.Green
+                    .border(1.dp, MaterialTheme.colorScheme.primary, CircleShape) // Replace MainColor
                     .align(Alignment.TopEnd)
             )
         }
@@ -188,7 +189,7 @@ fun SignInButton(onClick: () -> Unit) {
         onClick = onClick,
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.secondaryContainer,
-            contentColor = Black
+            contentColor = MaterialTheme.colorScheme.onSurface // Replace Black
         ),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         shape = MaterialTheme.shapes.small
@@ -197,9 +198,9 @@ fun SignInButton(onClick: () -> Unit) {
             painter = painterResource(id = R.drawable.ic_google),
             contentDescription = null,
             modifier = Modifier.size(18.dp),
-            tint = Black
+            tint = MaterialTheme.colorScheme.onSurface // Replace Black
         )
         Spacer(modifier = Modifier.width(8.dp))
-        Text("Sign In", color = Black)
+        Text("Sign In", color = MaterialTheme.colorScheme.onSurface) // Replace Black
     }
 }

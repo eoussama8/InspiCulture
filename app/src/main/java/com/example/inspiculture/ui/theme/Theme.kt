@@ -19,92 +19,27 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import com.example.inspiculture.data.ThemeMode
 import com.example.inspiculture.data.ThemePreferences
 
+
+
 private val DarkColorScheme = darkColorScheme(
-    primary = Black,
-    onPrimary = White,
+    primary = MainColor,        // Keep MainColor as primary in dark mode
+    onPrimary = White,          // Text/icon color on top of primary
     background = Black,
     onBackground = White,
     tertiary = MainColor
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = White,
-    onPrimary = Black,
+    primary = MainColor,        // Keep MainColor as primary in light mode
+    onPrimary = Black,          // Text/icon color on top of primary
     background = White,
     onBackground = Black,
     tertiary = MainColor
 )
-
-@Composable
-fun MyButton(
-    text: String,
-    onClick: () -> Unit,
-    width: Dp,
-    height: Dp
-) {
-    Button(
-        onClick = onClick,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MainColor,
-        ),
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier
-            .width(width)
-            .height(height)
-    ) {
-        Text(
-            text = text,
-            color = White,
-            style = MaterialTheme.typography.bodyLarge
-        )
-    }
-}
-@Composable
-fun MyButtonWithIcon(
-    text: String,
-    icon: Painter,  // Use Painter for images or SVGs
-    onClick: () -> Unit,
-    width: Dp = 200.dp,
-    height: Dp = 50.dp
-) {
-    Button(
-        onClick = onClick,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MainColor,
-        ),
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier
-            .width(width)
-            .height(height)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                painter = icon,  // Use painter for the icon
-                contentDescription = null,
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = text,
-                color = White,
-                style = MaterialTheme.typography.bodyLarge
-            )
-        }
-    }
-}
-
 
 @Composable
 fun InspiCultureTheme(
@@ -121,9 +56,20 @@ fun InspiCultureTheme(
     }
 
     val colorScheme = when {
+        // Dynamic colors (Android 12+) with fallback to ensure MainColor persists
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
-            if (isDarkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            val dynamicScheme = if (isDarkTheme) {
+                dynamicDarkColorScheme(context)
+            } else {
+                dynamicLightColorScheme(context)
+            }
+            // Override dynamic scheme to enforce MainColor
+            dynamicScheme.copy(
+                primary = MainColor,
+                tertiary = MainColor,
+                onPrimary = if (isDarkTheme) White else Black
+            )
         }
         isDarkTheme -> DarkColorScheme
         else -> LightColorScheme
@@ -135,5 +81,3 @@ fun InspiCultureTheme(
         content = content
     )
 }
-
-

@@ -3,6 +3,7 @@ package com.example.inspiculture
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,8 +26,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.inspiculture.ui.theme.*
-
 
 val TabItems = listOf(
     R.drawable.home to "Home",
@@ -36,7 +35,6 @@ val TabItems = listOf(
     R.drawable.settings to "Settings"
 )
 
-
 @Composable
 fun EnhancedTabNavigation(
     selectedTab: Int,
@@ -45,14 +43,17 @@ fun EnhancedTabNavigation(
 ) {
     // Surface that contains the bottom navigation bar
     Surface(
-        color = Color.White,
+        color = MaterialTheme.colorScheme.surface, // Replace Color.White
         shadowElevation = 8.dp,
         modifier = modifier
             .fillMaxWidth()
             .height(80.dp)
             .border(
-                width = 1.dp,
-                color = MainColor.copy(alpha = 0.3f),
+                BorderStroke(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                ),
+                shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp)
             )
     ) {
         Row(
@@ -67,7 +68,7 @@ fun EnhancedTabNavigation(
 
                 // Animate color change on tab selection
                 val iconColor by animateColorAsState(
-                    targetValue = if (isSelected) MainColor else Line,
+                    targetValue = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline, // Replace MainColor and Line
                     animationSpec = tween(400)
                 )
 
@@ -94,7 +95,7 @@ fun EnhancedTabNavigation(
                             .size(28.dp)
                             .scale(scale)
                             .background(
-                                color = if (isSelected) MainColor.copy(alpha = 0.1f) else Color.Transparent,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent, // Replace MainColor
                                 shape = CircleShape
                             ),
                         contentAlignment = Alignment.Center
@@ -122,20 +123,11 @@ fun EnhancedTabNavigation(
                             modifier = Modifier
                                 .padding(top = 2.dp)
                                 .size(4.dp)
-                                .background(MainColor, CircleShape)  // Add indicator for selected tab
+                                .background(MaterialTheme.colorScheme.primary, CircleShape)  // Replace MainColor
                         )
                     }
                 }
             }
         }
     }
-}
-
-
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewEnhancedTabNavigation() {
-    var selectedTab by remember { mutableStateOf(0) }
-    EnhancedTabNavigation(selectedTab = selectedTab, onTabSelected = { selectedTab = it })
 }

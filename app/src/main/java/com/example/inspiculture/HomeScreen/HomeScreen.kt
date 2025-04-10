@@ -27,10 +27,6 @@ import com.example.inspiculture.R
 import com.example.inspiculture.Retrofite.Books.Book
 import com.example.inspiculture.Retrofite.Music.Track
 import com.example.inspiculture.Retrofite.Shows.Show
-import com.example.inspiculture.ui.theme.Black
-import com.example.inspiculture.ui.theme.Line
-import com.example.inspiculture.ui.theme.MainColor
-import com.example.inspiculture.ui.theme.White
 import com.example.inspiculture.viewModel.BooksViewModel
 import com.example.inspiculture.viewModel.MusicViewModel
 import com.example.inspiculture.viewModel.ShowsViewModel
@@ -49,6 +45,7 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
+            .background(MaterialTheme.colorScheme.background) // Adaptive background
             .padding(top = 16.dp)
     ) {
         // Books Section
@@ -108,7 +105,7 @@ fun SectionHeader(title: String, onMoreClick: () -> Unit) {
         TextButton(onClick = onMoreClick) {
             Text(
                 text = "More",
-                color = MainColor,
+                color = MaterialTheme.colorScheme.primary, // Replaces MainColor
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium
             )
@@ -134,13 +131,15 @@ fun BooksSection(
         ) {
             Text(
                 text = "Loading books...",
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onBackground // Adaptive text color
             )
         }
     } else {
         LazyRow(
             contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.background(MaterialTheme.colorScheme.background) // Adaptive background
         ) {
             items(randomBooks) { book ->
                 BookCard(book = book, onClick = { onBookClick(book) })
@@ -167,13 +166,15 @@ fun ShowsSection(
         ) {
             Text(
                 text = "Loading shows...",
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onBackground // Adaptive text color
             )
         }
     } else {
         LazyRow(
             contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.background(MaterialTheme.colorScheme.background) // Adaptive background
         ) {
             items(randomShows) { show ->
                 ShowCard(show = show, onClick = { onShowClick(show) })
@@ -200,13 +201,15 @@ fun MusicSection(
         ) {
             Text(
                 text = "Loading tracks...",
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onBackground // Adaptive text color
             )
         }
     } else {
         LazyRow(
             contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.background(MaterialTheme.colorScheme.background) // Adaptive background
         ) {
             items(randomTracks) { track ->
                 TrackCard(track = track, onClick = { onTrackClick(track) })
@@ -226,11 +229,11 @@ fun BookCard(book: Book, onClick: () -> Unit) {
             .clickable(onClick = onClick)
             .border(
                 width = 1.dp,
-                color = Color.LightGray,
+                color = MaterialTheme.colorScheme.outline, // Replaces Color.LightGray
                 shape = RoundedCornerShape(12.dp)
             ),
         shape = RoundedCornerShape(12.dp),
-        color = White
+        color = MaterialTheme.colorScheme.surface // Replaces White
     ) {
         Column {
             Box(
@@ -252,14 +255,14 @@ fun BookCard(book: Book, onClick: () -> Unit) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Line.copy(alpha = 0.2f)),
+                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)), // Replaces Line
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.err),
                             contentDescription = "No Image",
                             modifier = Modifier.size(60.dp),
-                            tint = MainColor.copy(alpha = 0.5f)
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) // Replaces MainColor
                         )
                     }
                 }
@@ -271,7 +274,7 @@ fun BookCard(book: Book, onClick: () -> Unit) {
                             brush = Brush.verticalGradient(
                                 colors = listOf(
                                     Color.Transparent,
-                                    Black.copy(alpha = 0.4f)
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f) // Replaces Black
                                 ),
                                 startY = 100f
                             )
@@ -290,7 +293,7 @@ fun BookCard(book: Book, onClick: () -> Unit) {
                         ),
                         contentDescription = if (isSaved) "Unsave" else "Save",
                         modifier = Modifier.size(20.dp),
-                        tint = MainColor
+                        tint = MaterialTheme.colorScheme.primary // Replaces MainColor
                     )
                 }
             }
@@ -307,7 +310,7 @@ fun BookCard(book: Book, onClick: () -> Unit) {
                         fontWeight = FontWeight.Bold,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        color = Black
+                        color = MaterialTheme.colorScheme.onSurface // Replaces Black
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
@@ -315,7 +318,7 @@ fun BookCard(book: Book, onClick: () -> Unit) {
                     Text(
                         text = book.authors?.joinToString(", ") ?: "Unknown Author",
                         fontSize = 12.sp,
-                        color = Line,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), // Replaces Line
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -336,11 +339,11 @@ fun ShowCard(show: Show, onClick: () -> Unit) {
             .clickable(onClick = onClick)
             .border(
                 width = 1.dp,
-                color = Color.LightGray,
+                color = MaterialTheme.colorScheme.outline, // Replaces Color.LightGray
                 shape = RoundedCornerShape(12.dp)
             ),
         shape = RoundedCornerShape(12.dp),
-        color = White
+        color = MaterialTheme.colorScheme.surface // Replaces White
     ) {
         Column {
             Box(
@@ -361,14 +364,14 @@ fun ShowCard(show: Show, onClick: () -> Unit) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Line.copy(alpha = 0.2f)),
+                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)), // Replaces Line
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.err),
                             contentDescription = "No Image",
                             modifier = Modifier.size(60.dp),
-                            tint = MainColor.copy(alpha = 0.5f)
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) // Replaces MainColor
                         )
                     }
                 }
@@ -380,7 +383,7 @@ fun ShowCard(show: Show, onClick: () -> Unit) {
                             brush = Brush.verticalGradient(
                                 colors = listOf(
                                     Color.Transparent,
-                                    Black.copy(alpha = 0.4f)
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f) // Replaces Black
                                 ),
                                 startY = 100f
                             )
@@ -399,7 +402,7 @@ fun ShowCard(show: Show, onClick: () -> Unit) {
                         ),
                         contentDescription = if (isSaved) "Unsave" else "Save",
                         modifier = Modifier.size(20.dp),
-                        tint = MainColor
+                        tint = MaterialTheme.colorScheme.primary // Replaces MainColor
                     )
                 }
             }
@@ -416,7 +419,7 @@ fun ShowCard(show: Show, onClick: () -> Unit) {
                         fontWeight = FontWeight.Bold,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        color = Black
+                        color = MaterialTheme.colorScheme.onSurface // Replaces Black
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
@@ -424,7 +427,7 @@ fun ShowCard(show: Show, onClick: () -> Unit) {
                     Text(
                         text = show.genreNames.joinToString(", ") ?: "Unknown Genre",
                         fontSize = 12.sp,
-                        color = Line,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), // Replaces Line
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -445,11 +448,11 @@ fun TrackCard(track: Track, onClick: () -> Unit) {
             .clickable(onClick = onClick)
             .border(
                 width = 1.dp,
-                color = Color.LightGray,
+                color = MaterialTheme.colorScheme.outline, // Replaces Color.LightGray
                 shape = RoundedCornerShape(12.dp)
             ),
         shape = RoundedCornerShape(12.dp),
-        color = White
+        color = MaterialTheme.colorScheme.surface // Replaces White
     ) {
         Column {
             Box(
@@ -470,14 +473,14 @@ fun TrackCard(track: Track, onClick: () -> Unit) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Line.copy(alpha = 0.2f)),
+                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)), // Replaces Line
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.music),
                             contentDescription = "Track Placeholder",
                             modifier = Modifier.size(60.dp),
-                            tint = MainColor.copy(alpha = 0.5f)
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) // Replaces MainColor
                         )
                     }
                 }
@@ -489,7 +492,7 @@ fun TrackCard(track: Track, onClick: () -> Unit) {
                             brush = Brush.verticalGradient(
                                 colors = listOf(
                                     Color.Transparent,
-                                    Black.copy(alpha = 0.4f)
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f) // Replaces Black
                                 ),
                                 startY = 100f
                             )
@@ -508,7 +511,7 @@ fun TrackCard(track: Track, onClick: () -> Unit) {
                         ),
                         contentDescription = if (isSaved) "Unsave" else "Save",
                         modifier = Modifier.size(20.dp),
-                        tint = MainColor
+                        tint = MaterialTheme.colorScheme.primary // Replaces MainColor
                     )
                 }
             }
@@ -525,7 +528,7 @@ fun TrackCard(track: Track, onClick: () -> Unit) {
                         fontWeight = FontWeight.Bold,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        color = Black
+                        color = MaterialTheme.colorScheme.onSurface // Replaces Black
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
@@ -533,7 +536,7 @@ fun TrackCard(track: Track, onClick: () -> Unit) {
                     Text(
                         text = track.getArtistsString(),
                         fontSize = 12.sp,
-                        color = Line,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), // Replaces Line
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )

@@ -47,7 +47,7 @@ import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 @Composable
 fun BooksScreen(
     viewModel: BooksViewModel,
-    onDetailsClick: (Book) -> Unit = {} // Added parameter for navigation
+    onDetailsClick: (Book) -> Unit = {}
 ) {
     val books by viewModel.books.observeAsState(emptyList())
     val isLoading by viewModel.isLoading.observeAsState(false)
@@ -59,8 +59,11 @@ fun BooksScreen(
     var isGridView by remember { mutableStateOf(true) }
     val swipeRefreshState = rememberSwipeRefreshState(isLoading)
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        // Smaller Top App Bar
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background) // Ensure screen background adapts
+    ) {
         BooksTopAppBar(
             searchQuery = searchQuery,
             onSearchQueryChange = {
@@ -73,14 +76,12 @@ fun BooksScreen(
             onViewToggle = { isGridView = it }
         )
 
-        // Categories Row with text and underline
         ImprovedCategoriesRow(
             categories = categories,
             selectedCategory = selectedCategory,
             onCategorySelected = { viewModel.selectCategory(it) }
         )
 
-        // Main Content
         SwipeRefresh(
             state = swipeRefreshState,
             onRefresh = { viewModel.refreshBooks() },
@@ -102,20 +103,19 @@ fun BooksScreen(
                         BooksList(
                             books = filteredBooks,
                             isGridView = isGridView,
-                            onDetailsClick = onDetailsClick // Pass the callback to BooksList
+                            onDetailsClick = onDetailsClick
                         )
                     }
                 }
 
-                // Loading Indicator
                 if (isLoading) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.3f)),
+                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(color = MainColor)
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
@@ -135,58 +135,46 @@ fun BooksTopAppBar(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .height(if (showSearch) 100.dp else 60.dp), // Reduced height
-        color = MainColor,
+            .height(if (showSearch) 100.dp else 60.dp),
+        color = MaterialTheme.colorScheme.primary
     ) {
         Column {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(60.dp) // Reduced height
+                    .height(60.dp)
                     .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
                     text = "Discover Books",
-                    color = White,
-                    fontSize = 20.sp, // Reduced font size
+                    color = MaterialTheme.colorScheme.background,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
-
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Search toggle
-                    IconButton(
-                        onClick = { onSearchToggle(!showSearch) },
-                        modifier = Modifier.size(40.dp) // Smaller icon button
-                    ) {
+                    IconButton(onClick = { onSearchToggle(!showSearch) }, modifier = Modifier.size(40.dp)) {
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Search",
-                            tint = White,
-                            modifier = Modifier.size(20.dp) // Smaller icon
+                            tint = MaterialTheme.colorScheme.background,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
-
-                    // View toggle (Grid/List)
-                    IconButton(
-                        onClick = { onViewToggle(!isGridView) },
-                        modifier = Modifier.size(40.dp) // Smaller icon button
-                    ) {
+                    IconButton(onClick = { onViewToggle(!isGridView) }, modifier = Modifier.size(40.dp)) {
                         Icon(
                             painter = if (isGridView) painterResource(R.drawable.grid) else painterResource(R.drawable.details),
                             contentDescription = "Toggle View",
-                            tint = White,
-                            modifier = Modifier.size(20.dp) // Smaller icon
+                            tint = MaterialTheme.colorScheme.background,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
             }
-
-            // Search field (expandable)
             AnimatedVisibility(
                 visible = showSearch,
                 enter = fadeIn(animationSpec = tween(300)),
@@ -195,25 +183,31 @@ fun BooksTopAppBar(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = onSearchQueryChange,
-                    placeholder = { Text("Search by title, author or genre", color = White.copy(alpha = 0.7f), fontSize = 14.sp) },
+                    placeholder = {
+                        Text(
+                            "Search by title, author or genre",
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                            fontSize = 14.sp
+                        )
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MainColor,
-                        unfocusedContainerColor = MainColor,
-                        disabledContainerColor = MainColor,
-                        focusedIndicatorColor = White,
-                        unfocusedIndicatorColor = White.copy(alpha = 0.5f),
-                        focusedTextColor = White,
-                        unfocusedTextColor = White
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        disabledContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedIndicatorColor = MaterialTheme.colorScheme.onPrimary,
+                        unfocusedIndicatorColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f),
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                     ),
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = null,
-                            tint = White,
-                            modifier = Modifier.size(18.dp) // Smaller icon
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(18.dp)
                         )
                     },
                     trailingIcon = {
@@ -222,14 +216,14 @@ fun BooksTopAppBar(
                                 Icon(
                                     painter = painterResource(id = R.drawable.unsave),
                                     contentDescription = "Clear search",
-                                    tint = White,
-                                    modifier = Modifier.size(18.dp) // Smaller icon
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                         }
                     },
                     singleLine = true,
-                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp) // Smaller text
+                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp)
                 )
             }
         }
@@ -250,7 +244,7 @@ fun ImprovedCategoriesRow(
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
             contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(24.dp) // More space between categories
+            horizontalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             items(categories) { category ->
                 CategoryText(
@@ -277,19 +271,17 @@ fun CategoryText(
     ) {
         Text(
             text = category,
-            color = if (isSelected) MainColor else Black.copy(alpha = 0.7f),
+            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
             fontSize = 16.sp,
             modifier = Modifier.padding(bottom = 2.dp)
         )
-
-        // Underline indicator when selected
         if (isSelected) {
             Box(
                 modifier = Modifier
                     .width(40.dp)
                     .height(2.dp)
-                    .background(MainColor)
+                    .background(MaterialTheme.colorScheme.primary)
             )
         }
     }
@@ -300,14 +292,15 @@ fun CategoryText(
 fun BooksList(
     books: List<Book>,
     isGridView: Boolean,
-    onDetailsClick: (Book) -> Unit = {} // Pass the callback down
+    onDetailsClick: (Book) -> Unit = {}
 ) {
     if (isGridView) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.background(MaterialTheme.colorScheme.background) // Ensure grid background
         ) {
             items(books) { book ->
                 ImprovedBookGridItem(book, onDetailsClick = { onDetailsClick(book) })
@@ -316,7 +309,8 @@ fun BooksList(
     } else {
         LazyColumn(
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.background(MaterialTheme.colorScheme.background) // Ensure list background
         ) {
             items(books, key = { it.id ?: it.title }) { book ->
                 ImprovedBookListItem(
@@ -339,20 +333,18 @@ fun ImprovedBookGridItem(book: Book, onDetailsClick: () -> Unit) {
             .clickable { onDetailsClick() }
             .border(
                 width = 1.dp,
-                color = Color.LightGray,
+                color = MaterialTheme.colorScheme.outline,
                 shape = RoundedCornerShape(12.dp)
             ),
         shape = RoundedCornerShape(12.dp),
-        color = White
+        color = MaterialTheme.colorScheme.surface // Should be Black in dark mode
     ) {
         Column {
-            // Book Cover Image (takes up 2/3 of the card)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(180.dp)
             ) {
-                // Book cover image
                 val imageUrl = book.imageLinks?.thumbnail
                 if (imageUrl != null && imageUrl.isNotEmpty()) {
                     AsyncImage(
@@ -362,11 +354,10 @@ fun ImprovedBookGridItem(book: Book, onDetailsClick: () -> Unit) {
                         modifier = Modifier.fillMaxSize()
                     )
                 } else {
-                    // Fallback image
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Line.copy(alpha = 0.2f)),
+                            .background(MaterialTheme.colorScheme.outline),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -375,12 +366,10 @@ fun ImprovedBookGridItem(book: Book, onDetailsClick: () -> Unit) {
                             modifier = Modifier
                                 .size(60.dp)
                                 .padding(8.dp),
-                            tint = MainColor.copy(alpha = 0.5f)
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                         )
                     }
                 }
-
-                // Gradient overlay
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -388,30 +377,26 @@ fun ImprovedBookGridItem(book: Book, onDetailsClick: () -> Unit) {
                             brush = Brush.verticalGradient(
                                 colors = listOf(
                                     Color.Transparent,
-                                    Color.Black.copy(alpha = 0.4f)
+                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
                                 ),
                                 startY = 120f
                             )
                         )
                 )
-
-                // Save button
                 IconButton(
                     onClick = { isSaved = !isSaved },
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .size(32.dp)
                 ) {
                     Icon(
-                        painter = painterResource(
-                            id = if (isSaved) R.drawable.save else R.drawable.unsave
-                        ),
+                        painter = painterResource(id = if (isSaved) R.drawable.save else R.drawable.unsave),
                         contentDescription = if (isSaved) "Unsave" else "Save",
                         modifier = Modifier.size(20.dp),
-                        tint = MainColor
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
-
-            // Book Details
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -424,12 +409,12 @@ fun ImprovedBookGridItem(book: Book, onDetailsClick: () -> Unit) {
                         fontWeight = FontWeight.Bold,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        color = Black
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = book.authors?.joinToString(", ") ?: "Unknown Author",
                         fontSize = 12.sp,
-                        color = Line,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -450,14 +435,14 @@ fun ImprovedBookListItem(
         modifier = modifier
             .fillMaxWidth()
             .height(140.dp)
-            .clickable { /* Navigate to book details */ }
+            .clickable { onDetailsClick() }
             .border(
                 width = 1.dp,
-                color = Color.LightGray,
+                color = MaterialTheme.colorScheme.outline,
                 shape = RoundedCornerShape(12.dp)
             ),
         shape = RoundedCornerShape(12.dp),
-        color = White
+        color = MaterialTheme.colorScheme.surface // Should be Black in dark mode
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
             Box(modifier = Modifier
@@ -475,7 +460,7 @@ fun ImprovedBookListItem(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Line.copy(alpha = 0.2f)),
+                            .background(MaterialTheme.colorScheme.outline),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -484,7 +469,7 @@ fun ImprovedBookListItem(
                             modifier = Modifier
                                 .size(40.dp)
                                 .padding(8.dp),
-                            tint = MainColor.copy(alpha = 0.5f)
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                         )
                     }
                 }
@@ -501,13 +486,13 @@ fun ImprovedBookListItem(
                         fontWeight = FontWeight.Bold,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        color = Black
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = book.authors?.joinToString(", ") ?: "Unknown Author",
                         fontSize = 14.sp,
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -529,11 +514,14 @@ fun ImprovedBookListItem(
                 ) {
                     TextButton(
                         onClick = onDetailsClick,
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                        colors = ButtonDefaults.textButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                        )
                     ) {
                         Text(
                             text = "Details",
-                            color = MainColor,
+                            color = MaterialTheme.colorScheme.primary,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -543,12 +531,10 @@ fun ImprovedBookListItem(
                         modifier = Modifier.size(32.dp)
                     ) {
                         Icon(
-                            painter = painterResource(
-                                id = if (isSaved) R.drawable.save else R.drawable.unsave
-                            ),
+                            painter = painterResource(id = if (isSaved) R.drawable.save else R.drawable.unsave),
                             contentDescription = if (isSaved) "Unsave" else "Save",
                             modifier = Modifier.size(20.dp),
-                            tint = MainColor
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -561,12 +547,12 @@ fun ImprovedBookListItem(
 fun MiniCategoryChip(category: String) {
     Surface(
         shape = RoundedCornerShape(4.dp),
-        color = MainColor.copy(alpha = 0.1f)
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
     ) {
         Text(
             text = category,
             fontSize = 10.sp,
-            color = MainColor,
+            color = MaterialTheme.colorScheme.onPrimary,
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
@@ -575,9 +561,39 @@ fun MiniCategoryChip(category: String) {
 }
 
 @Composable
+fun EmptyStateMessage(category: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background), // Ensure background consistency
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.empty),
+                contentDescription = "No Books Found",
+                modifier = Modifier.size(120.dp)
+            )
+            Text(
+                text = if (category == "All") "No books found" else "No books found in $category category",
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+        }
+    }
+}
+
+@Composable
 fun ErrorMessage(message: String) {
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background), // Ensure background consistency
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -593,39 +609,15 @@ fun ErrorMessage(message: String) {
             Text(
                 text = "Error: $message",
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.error
+                color = MaterialTheme.colorScheme.error,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
             Button(
                 onClick = { /* Retry loading books */ },
-                colors = ButtonDefaults.buttonColors(containerColor = MainColor)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
-                Text("Retry")
+                Text("Retry", color = MaterialTheme.colorScheme.onPrimary)
             }
-        }
-    }
-}
-
-@Composable
-fun EmptyStateMessage(category: String) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.empty),  // You'll need to add this drawable
-                contentDescription = "No Books Found",
-                modifier = Modifier.size(120.dp)
-            )
-            Text(
-                text = if (category == "All") "No books found" else "No books found in $category category",
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
         }
     }
 }

@@ -8,8 +8,6 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-
-
 class MusicViewModel : ViewModel() {
     private val _categories = MutableLiveData<List<Category>>()
     val categories: LiveData<List<Category>> = _categories
@@ -26,12 +24,16 @@ class MusicViewModel : ViewModel() {
     private val _selectedCategory = MutableLiveData<String>("All")
     val selectedCategory: LiveData<String> = _selectedCategory
 
+    // New LiveData for detailed track information
+    private val _selectedTrackDetails = MutableLiveData<TrackDetails?>()
+    val selectedTrackDetails: LiveData<TrackDetails?> = _selectedTrackDetails
+
     private val _allTracks = mutableListOf<Track>()
 
     private val retrofitService = RetrofitClient.musicApiService
     private val tokenService = TokenClient.tokenApiService
 
-    private val countryCode = "US" // You can make this dynamic based on user location
+    private val countryCode = "US" // Can be made dynamic
 
     init {
         fetchAccessToken()
@@ -66,9 +68,8 @@ class MusicViewModel : ViewModel() {
                 _isLoading.value = false
                 if (response.isSuccessful) {
                     val categoryList = response.body()?.categories?.items ?: emptyList()
-                    android.util.Log.d("MusicViewModel", "Categories fetched: $categoryList")
                     _categories.value = categoryList
-                    fetchTracks("Popular") // Default to "All"
+                    fetchTracks("Popular")
                 } else {
                     _errorMessage.value = "Failed to fetch categories: ${response.code()} - ${response.message()}"
                 }
@@ -88,11 +89,10 @@ class MusicViewModel : ViewModel() {
                 _isLoading.value = false
                 if (response.isSuccessful) {
                     val trackList = response.body()?.tracks?.items ?: emptyList()
-                    android.util.Log.d("MusicViewModel", "Tracks fetched: $trackList")
                     _allTracks.clear()
                     _allTracks.addAll(trackList)
                     _tracks.value = trackList
-                    _errorMessage.value = "" // Clear any previous error
+                    _errorMessage.value = ""
                 } else {
                     _errorMessage.value = "Failed to fetch tracks: ${response.code()} - ${response.message()}"
                 }
@@ -111,25 +111,18 @@ class MusicViewModel : ViewModel() {
             override fun onResponse(call: Call<PlaylistResponse>, response: Response<PlaylistResponse>) {
                 if (response.isSuccessful) {
                     val playlists = response.body()?.playlists?.items ?: emptyList()
-                    android.util.Log.d("MusicViewModel", "Playlists fetched for category $categoryId: $playlists")
                     if (playlists.isNotEmpty()) {
                         val tracksUrl = playlists[0].tracks.href
-                        android.util.Log.d("MusicViewModel", "Fetching tracks from URL: $tracksUrl")
                         fetchPlaylistTracks(tracksUrl)
                     } else {
                         _isLoading.value = false
-                        android.util.Log.w("MusicViewModel", "No playlists found for category ID: $categoryId, falling back to search")
-                        // Fallback to search with category name
                         val categoryName = _categories.value?.find { it.id == categoryId }?.name ?: "Unknown"
                         fetchTracks(categoryName)
                     }
                 } else {
                     _isLoading.value = false
-                    android.util.Log.e("MusicViewModel", "Failed to fetch playlists for category $categoryId: ${response.code()} - ${response.message()}")
                     if (response.code() == 404) {
-                        // Fallback to search with category name
                         val categoryName = _categories.value?.find { it.id == categoryId }?.name ?: "Unknown"
-                        android.util.Log.w("MusicViewModel", "Category playlists not found (404), falling back to search with query: $categoryName")
                         fetchTracks(categoryName)
                     } else {
                         _errorMessage.value = "Failed to fetch category playlists: ${response.code()} - ${response.message()}"
@@ -150,11 +143,10 @@ class MusicViewModel : ViewModel() {
                 _isLoading.value = false
                 if (response.isSuccessful) {
                     val trackList = response.body()?.tracks?.items ?: emptyList()
-                    android.util.Log.d("MusicViewModel", "Playlist Tracks fetched: $trackList")
                     _allTracks.clear()
                     _allTracks.addAll(trackList)
                     _tracks.value = trackList
-                    _errorMessage.value = "" // Clear any previous error
+                    _errorMessage.value = ""
                 } else {
                     _errorMessage.value = "Failed to fetch playlist tracks: ${response.code()} - ${response.message()}"
                 }
@@ -167,6 +159,26 @@ class MusicViewModel : ViewModel() {
         })
     }
 
+    // New method to fetch track details
+    fun fetchTrackDetails(trackId: String) {
+        _isLoading.value = true
+        retrofitService.getTrackDetails(trackId).enqueue(object : Callback<TrackDetails> {
+            override fun onResponse(call: Call<TrackDetails>, response: Response<TrackDetails>) {
+                _isLoading.value = false
+                if (response.isSuccessful) {
+                    _selectedTrackDetails.value = response.body()
+                } else {
+                    _errorMessage.value = "Failed to fetch track details: ${response.code()} - ${response.message()}"
+                }
+            }
+
+            override fun onFailure(call: Call<TrackDetails>, t: Throwable) {
+                _isLoading.value = false
+                _errorMessage.value = "Track details fetch failed: ${t.message}"
+            }
+        })
+    }
+
     fun searchTracks(query: String) {
         val baseList = _allTracks.toList()
         val filtered = baseList.filter { track ->
@@ -175,7 +187,7 @@ class MusicViewModel : ViewModel() {
                     track.album.name.contains(query, ignoreCase = true)
         }
         _tracks.value = filtered
-        _errorMessage.value = "" // Clear error on successful search
+        _errorMessage.value = ""
     }
 
     fun selectCategory(category: String) {
@@ -183,15 +195,10 @@ class MusicViewModel : ViewModel() {
         if (category == "All") {
             fetchTracks("Popular")
         } else {
-            val categoriesList = _categories.value
-            if (categoriesList.isNullOrEmpty()) {
-                _errorMessage.value = "No categories available to select from"
-                return
-            }
-            val categoryItem = categoriesList.find { it.name == category }
+            val categoryItem = _categories.value?.find { it.name == category }
             categoryItem?.id?.let { fetchCategoryPlaylists(it) } ?: run {
                 _errorMessage.value = "Category '$category' not found"
-                fetchTracks(category) // Fallback to search
+                fetchTracks(category)
             }
         }
     }

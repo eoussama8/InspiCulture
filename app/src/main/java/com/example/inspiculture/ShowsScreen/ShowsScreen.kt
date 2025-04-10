@@ -18,7 +18,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -36,10 +35,6 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.inspiculture.R
 import com.example.inspiculture.Retrofite.Shows.Show
-import com.example.inspiculture.ui.theme.Black
-import com.example.inspiculture.ui.theme.Line
-import com.example.inspiculture.ui.theme.MainColor
-import com.example.inspiculture.ui.theme.White
 import com.example.inspiculture.viewModel.ShowsViewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
@@ -48,7 +43,7 @@ import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 @Composable
 fun ShowsScreen(
     viewModel: ShowsViewModel,
-    onDetailsClick: (Show) -> Unit = {} // Added callback for navigation
+    onDetailsClick: (Show) -> Unit = {}
 ) {
     val shows by viewModel.shows.observeAsState(emptyList())
     val isLoading by viewModel.isLoading.observeAsState(false)
@@ -62,7 +57,11 @@ fun ShowsScreen(
     val swipeRefreshState = rememberSwipeRefreshState(isLoading)
     val genreMap = genres.associateBy { it.id }.mapValues { it.value.name }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background) // Adaptive background
+    ) {
         ShowsTopAppBar(
             searchQuery = searchQuery,
             onSearchQueryChange = {
@@ -85,7 +84,8 @@ fun ShowsScreen(
 
         SwipeRefresh(
             state = swipeRefreshState,
-            onRefresh = { viewModel.refreshShows() }
+            onRefresh = { viewModel.refreshShows() },
+            modifier = Modifier.fillMaxSize()
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 if (errorMessage.isNotEmpty()) {
@@ -97,17 +97,17 @@ fun ShowsScreen(
                         shows = shows,
                         isGridView = isGridView,
                         genreMap = genreMap,
-                        onDetailsClick = onDetailsClick // Pass callback to ShowsList
+                        onDetailsClick = onDetailsClick
                     )
                 }
                 if (isLoading) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.3f)),
+                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)), // Adaptive overlay
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(color = MainColor)
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary) // Replaces MainColor
                     }
                 }
             }
@@ -128,7 +128,7 @@ fun ShowsTopAppBar(
         modifier = Modifier
             .fillMaxWidth()
             .height(if (showSearch) 100.dp else 60.dp),
-        color = MainColor
+        color = MaterialTheme.colorScheme.primary // Replaces MainColor
     ) {
         Column {
             Row(
@@ -141,7 +141,7 @@ fun ShowsTopAppBar(
             ) {
                 Text(
                     text = "Discover Shows",
-                    color = White,
+                    color = MaterialTheme.colorScheme.background, // Replaces White
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -157,7 +157,7 @@ fun ShowsTopAppBar(
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Search",
-                            tint = White,
+                            tint = MaterialTheme.colorScheme.background, // Replaces White
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -169,7 +169,7 @@ fun ShowsTopAppBar(
                         Icon(
                             painter = if (isGridView) painterResource(R.drawable.grid) else painterResource(R.drawable.details),
                             contentDescription = "Toggle View",
-                            tint = White,
+                            tint = MaterialTheme.colorScheme.background, // Replaces White
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -185,25 +185,29 @@ fun ShowsTopAppBar(
                     value = searchQuery,
                     onValueChange = onSearchQueryChange,
                     placeholder = {
-                        Text("Search by title, overview or genre", color = White.copy(alpha = 0.7f), fontSize = 14.sp)
+                        Text(
+                            "Search by title, overview or genre",
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), // Replaces White
+                            fontSize = 14.sp
+                        )
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MainColor,
-                        unfocusedContainerColor = MainColor,
-                        disabledContainerColor = MainColor,
-                        focusedIndicatorColor = White,
-                        unfocusedIndicatorColor = White.copy(alpha = 0.5f),
-                        focusedTextColor = White,
-                        unfocusedTextColor = White
+                        focusedContainerColor = MaterialTheme.colorScheme.surface, // Adaptive contrast
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        disabledContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedIndicatorColor = MaterialTheme.colorScheme.onPrimary,
+                        unfocusedIndicatorColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f),
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                     ),
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = null,
-                            tint = White,
+                            tint = MaterialTheme.colorScheme.onPrimary, // Replaces White
                             modifier = Modifier.size(18.dp)
                         )
                     },
@@ -213,7 +217,7 @@ fun ShowsTopAppBar(
                                 Icon(
                                     painter = painterResource(id = R.drawable.unsave),
                                     contentDescription = "Clear search",
-                                    tint = White,
+                                    tint = MaterialTheme.colorScheme.onPrimary, // Replaces White
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -268,7 +272,7 @@ fun CategoryText(
     ) {
         Text(
             text = category,
-            color = if (isSelected) MainColor else Black.copy(alpha = 0.7f),
+            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), // Replaces MainColor and Black
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
             fontSize = 16.sp,
             modifier = Modifier.padding(bottom = 2.dp)
@@ -279,7 +283,7 @@ fun CategoryText(
                 modifier = Modifier
                     .width(40.dp)
                     .height(2.dp)
-                    .background(MainColor)
+                    .background(MaterialTheme.colorScheme.primary) // Replaces MainColor
             )
         }
     }
@@ -291,14 +295,15 @@ fun ShowsList(
     shows: List<Show>,
     isGridView: Boolean,
     genreMap: Map<Int, String> = emptyMap(),
-    onDetailsClick: (Show) -> Unit = {} // Pass callback down
+    onDetailsClick: (Show) -> Unit = {}
 ) {
     if (isGridView) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.background(MaterialTheme.colorScheme.background) // Adaptive background
         ) {
             items(shows, key = { it.id }) { show ->
                 ImprovedShowGridItem(show = show, genreMap = genreMap, onDetailsClick = { onDetailsClick(show) })
@@ -307,7 +312,8 @@ fun ShowsList(
     } else {
         LazyColumn(
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.background(MaterialTheme.colorScheme.background) // Adaptive background
         ) {
             items(shows, key = { it.id }) { show ->
                 ImprovedShowListItem(
@@ -325,7 +331,7 @@ fun ShowsList(
 fun ImprovedShowGridItem(
     show: Show,
     genreMap: Map<Int, String>,
-    onDetailsClick: () -> Unit // Added callback
+    onDetailsClick: () -> Unit
 ) {
     var isSaved by remember { mutableStateOf(show.isFavoris) }
     val imageUrl = "https://image.tmdb.org/t/p/w500${show.poster_path}"
@@ -337,11 +343,11 @@ fun ImprovedShowGridItem(
             .clickable { onDetailsClick() }
             .border(
                 width = 1.dp,
-                color = Color.LightGray,
+                color = MaterialTheme.colorScheme.outline, // Replaces Color.LightGray
                 shape = RoundedCornerShape(12.dp)
             ),
         shape = RoundedCornerShape(12.dp),
-        color = White
+        color = MaterialTheme.colorScheme.surface // Replaces White
     ) {
         Column {
             Box(
@@ -360,7 +366,7 @@ fun ImprovedShowGridItem(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Line.copy(alpha = 0.2f)),
+                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)), // Replaces Line
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -369,7 +375,7 @@ fun ImprovedShowGridItem(
                             modifier = Modifier
                                 .size(60.dp)
                                 .padding(8.dp),
-                            tint = MainColor.copy(alpha = 0.5f)
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) // Replaces MainColor
                         )
                     }
                 }
@@ -381,7 +387,7 @@ fun ImprovedShowGridItem(
                             brush = Brush.verticalGradient(
                                 colors = listOf(
                                     Color.Transparent,
-                                    Color.Black.copy(alpha = 0.4f)
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f) // Replaces Black
                                 ),
                                 startY = 120f
                             )
@@ -401,7 +407,7 @@ fun ImprovedShowGridItem(
                         ),
                         contentDescription = if (isSaved) "Unsave" else "Save",
                         modifier = Modifier.size(20.dp),
-                        tint = MainColor
+                        tint = MaterialTheme.colorScheme.primary // Replaces MainColor
                     )
                 }
             }
@@ -418,7 +424,7 @@ fun ImprovedShowGridItem(
                         fontWeight = FontWeight.Bold,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        color = Black
+                        color = MaterialTheme.colorScheme.onSurface // Replaces Black
                     )
 
                     val genreNames = show.genreIds?.mapNotNull { genreMap[it] }?.joinToString(", ")
@@ -427,7 +433,7 @@ fun ImprovedShowGridItem(
                     Text(
                         text = genreNames,
                         fontSize = 12.sp,
-                        color = Line,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), // Replaces Line
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -442,7 +448,7 @@ fun ImprovedShowListItem(
     show: Show,
     genreMap: Map<Int, String>,
     modifier: Modifier = Modifier,
-    onDetailsClick: () -> Unit // Added callback
+    onDetailsClick: () -> Unit
 ) {
     var isSaved by remember { mutableStateOf(show.isFavoris) }
     val posterUrl = show.poster_path?.let { "https://image.tmdb.org/t/p/w500$it" }
@@ -454,16 +460,18 @@ fun ImprovedShowListItem(
             .clickable { onDetailsClick() }
             .border(
                 width = 1.dp,
-                color = Color.LightGray,
+                color = MaterialTheme.colorScheme.outline, // Replaces Color.LightGray
                 shape = RoundedCornerShape(12.dp)
             ),
         shape = RoundedCornerShape(12.dp),
-        color = White
+        color = MaterialTheme.colorScheme.surface // Replaces White
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
-            Box(modifier = Modifier
-                .width(100.dp)
-                .fillMaxHeight()) {
+            Box(
+                modifier = Modifier
+                    .width(100.dp)
+                    .fillMaxHeight()
+            ) {
                 if (!posterUrl.isNullOrEmpty()) {
                     AsyncImage(
                         model = posterUrl,
@@ -475,14 +483,14 @@ fun ImprovedShowListItem(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Line.copy(alpha = 0.2f)),
+                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)), // Replaces Line
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.err),
                             contentDescription = "No Image",
                             modifier = Modifier.size(40.dp),
-                            tint = MainColor.copy(alpha = 0.5f)
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) // Replaces MainColor
                         )
                     }
                 }
@@ -500,7 +508,7 @@ fun ImprovedShowListItem(
                         fontWeight = FontWeight.Bold,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        color = Black
+                        color = MaterialTheme.colorScheme.onSurface // Replaces Black
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
@@ -524,11 +532,14 @@ fun ImprovedShowListItem(
                 ) {
                     TextButton(
                         onClick = onDetailsClick,
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                        colors = ButtonDefaults.textButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) // Subtle background
+                        )
                     ) {
                         Text(
                             text = "Details",
-                            color = MainColor,
+                            color = MaterialTheme.colorScheme.primary, // Replaces MainColor
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -544,7 +555,7 @@ fun ImprovedShowListItem(
                             ),
                             contentDescription = if (isSaved) "Unsave" else "Save",
                             modifier = Modifier.size(20.dp),
-                            tint = MainColor
+                            tint = MaterialTheme.colorScheme.primary // Replaces MainColor
                         )
                     }
                 }
@@ -557,12 +568,12 @@ fun ImprovedShowListItem(
 fun MiniCategoryChip(category: String) {
     Surface(
         shape = RoundedCornerShape(4.dp),
-        color = MainColor.copy(alpha = 0.1f)
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) // Replaces MainColor
     ) {
         Text(
             text = category,
             fontSize = 10.sp,
-            color = MainColor,
+            color = MaterialTheme.colorScheme.onPrimary, // Better contrast, replaces MainColor
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
@@ -573,7 +584,9 @@ fun MiniCategoryChip(category: String) {
 @Composable
 fun ErrorMessage(message: String) {
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background), // Adaptive background
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -589,13 +602,17 @@ fun ErrorMessage(message: String) {
             Text(
                 text = "Error: $message",
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.error
+                color = MaterialTheme.colorScheme.error,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
             Button(
                 onClick = { /* Retry logic could be added here */ },
-                colors = ButtonDefaults.buttonColors(containerColor = MainColor)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary) // Replaces MainColor
             ) {
-                Text("Retry")
+                Text(
+                    text = "Retry",
+                    color = MaterialTheme.colorScheme.onPrimary // Adaptive text color
+                )
             }
         }
     }
@@ -604,7 +621,9 @@ fun ErrorMessage(message: String) {
 @Composable
 fun EmptyStateMessage(category: String) {
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background), // Adaptive background
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -613,17 +632,16 @@ fun EmptyStateMessage(category: String) {
             modifier = Modifier.padding(16.dp)
         ) {
             Image(
-                painter = painterResource(id = R.drawable.empty), // Ensure this drawable exists
+                painter = painterResource(id = R.drawable.empty),
                 contentDescription = "No Shows Found",
                 modifier = Modifier.size(120.dp)
             )
             Text(
                 text = if (category == "All") "No shows found" else "No shows found in $category category",
                 style = MaterialTheme.typography.bodyLarge,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                color = MaterialTheme.colorScheme.onBackground // Adaptive text color
             )
         }
     }
 }
-
-// New ShowDetailsScreen to display maximum details

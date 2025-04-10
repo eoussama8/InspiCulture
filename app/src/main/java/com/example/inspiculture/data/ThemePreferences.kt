@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -23,16 +24,16 @@ class ThemePreferences(private val context: Context) {
     val themeMode: Flow<ThemeMode> = dataStore.data.map { preferences ->
         ThemeMode.valueOf(preferences[THEME_KEY] ?: ThemeMode.SYSTEM.name)
     }
-    private val sharedPreferences: SharedPreferences = context.getSharedPreferences("theme_preferences", Context.MODE_PRIVATE)
-
-    fun isDarkMode(): Boolean {
-        // Retrieve the saved theme mode from shared preferences
-        return sharedPreferences.getBoolean("dark_mode", false)
-    }
 
     suspend fun setThemeMode(themeMode: ThemeMode) {
         dataStore.edit { preferences ->
             preferences[THEME_KEY] = themeMode.name
         }
+    }
+
+    // Method to check if Dark Mode is enabled
+    suspend fun isDarkMode(): Boolean {
+        val currentTheme = dataStore.data.first()[THEME_KEY] ?: ThemeMode.SYSTEM.name
+        return currentTheme == ThemeMode.DARK.name
     }
 }

@@ -43,7 +43,7 @@ fun BookDetailsScreen(
                 title = {
                     Text(
                         "Book Details",
-                        color = MainColor,
+                        color = MaterialTheme.colorScheme.primary, // Was MainColor
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -52,7 +52,7 @@ fun BookDetailsScreen(
                         Icon(
                             Icons.Default.ArrowBack,
                             contentDescription = "Back",
-                            tint = MainColor
+                            tint = MaterialTheme.colorScheme.primary // Was MainColor
                         )
                     }
                 },
@@ -61,22 +61,22 @@ fun BookDetailsScreen(
                         Icon(
                             imageVector = if (book.isFavoris) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
                             contentDescription = if (book.isFavoris) "Remove from favorites" else "Add to favorites",
-                            tint = if (book.isFavoris) MainColor else Line
+                            tint = if (book.isFavoris) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline // Was MainColor and Line
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = White
+                    containerColor = MaterialTheme.colorScheme.surface // Was White
                 )
             )
         },
-        containerColor = White
+        containerColor = MaterialTheme.colorScheme.background // Was White
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize()
-                .background(White)
+                .background(MaterialTheme.colorScheme.background) // Was White
         ) {
             item {
                 // Hero section with book cover and basic info
@@ -84,7 +84,6 @@ fun BookDetailsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
-                        .padding(bottom = 16.dp)
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -101,7 +100,7 @@ fun BookDetailsScreen(
                                     modifier = Modifier
                                         .size(200.dp, 280.dp)
                                         .border(
-                                            BorderStroke(1.dp, Line),
+                                            BorderStroke(1.dp, MaterialTheme.colorScheme.outline), // Was Line
                                             RoundedCornerShape(8.dp)
                                         )
                                         .padding(1.dp)
@@ -122,7 +121,7 @@ fun BookDetailsScreen(
                             text = book.title,
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
-                            color = Black,
+                            color = MaterialTheme.colorScheme.onSurface, // Was Black
                             textAlign = TextAlign.Center,
                             modifier = Modifier.padding(horizontal = 16.dp)
                         )
@@ -133,7 +132,7 @@ fun BookDetailsScreen(
                                 text = it.joinToString(", "),
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.Normal,
-                                color = Black.copy(alpha = 0.7f),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), // Was Black
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
                             )
@@ -166,14 +165,14 @@ fun BookDetailsScreen(
                                 Icon(
                                     Icons.Default.Language,
                                     contentDescription = null,
-                                    tint = MainColor,
+                                    tint = MaterialTheme.colorScheme.primary, // Was MainColor
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Text(
                                     text = it.uppercase(),
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Medium,
-                                    color = MainColor,
+                                    color = MaterialTheme.colorScheme.primary, // Was MainColor
                                     modifier = Modifier.padding(start = 4.dp)
                                 )
                             }
@@ -182,7 +181,7 @@ fun BookDetailsScreen(
                                 Text(
                                     text = " · ${it}",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = Black.copy(alpha = 0.6f),
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // Was Black
                                     fontWeight = FontWeight.Normal
                                 )
                             }
@@ -190,7 +189,7 @@ fun BookDetailsScreen(
                     }
                 }
 
-                Divider(color = Line.copy(alpha = 0.3f), thickness = 1.dp)
+                Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), thickness = 1.dp) // Was Line
 
                 // Description section with expand/collapse
                 book.description?.let { description ->
@@ -203,7 +202,7 @@ fun BookDetailsScreen(
                             text = "About this book",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = MainColor
+                            color = MaterialTheme.colorScheme.primary // Was MainColor
                         )
 
                         Spacer(modifier = Modifier.height(8.dp))
@@ -211,7 +210,7 @@ fun BookDetailsScreen(
                         Text(
                             text = description,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Black.copy(alpha = 0.8f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f), // Was Black
                             maxLines = if (expanded) Int.MAX_VALUE else 4,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.animateContentSize()
@@ -220,7 +219,7 @@ fun BookDetailsScreen(
                         TextButton(
                             onClick = { expanded = !expanded },
                             colors = ButtonDefaults.textButtonColors(
-                                contentColor = MainColor
+                                contentColor = MaterialTheme.colorScheme.primary // Was MainColor
                             )
                         ) {
                             Text(
@@ -230,7 +229,7 @@ fun BookDetailsScreen(
                         }
                     }
 
-                    Divider(color = Line.copy(alpha = 0.3f), thickness = 1.dp)
+                    Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), thickness = 1.dp) // Was Line
                 }
 
                 // PDF download section if available
@@ -245,35 +244,34 @@ fun BookDetailsScreen(
                                 text = "Available Formats",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = MainColor
+                                color = MaterialTheme.colorScheme.primary // Was MainColor
                             )
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            // PDF Download button
                             pdf.downloadLink?.let {
                                 OutlinedButton(
                                     onClick = { /* Handle download */ },
-                                    border = BorderStroke(1.dp, MainColor),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary), // Was MainColor
                                     modifier = Modifier.fillMaxWidth(),
                                     contentPadding = PaddingValues(vertical = 12.dp)
                                 ) {
                                     Icon(
                                         Icons.Default.Download,
                                         contentDescription = null,
-                                        tint = MainColor
+                                        tint = MaterialTheme.colorScheme.primary // Was MainColor
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
                                         "Download PDF",
-                                        color = MainColor,
+                                        color = MaterialTheme.colorScheme.primary, // Was MainColor
                                         fontWeight = FontWeight.Medium
                                     )
                                 }
                             }
                         }
 
-                        Divider(color = Line.copy(alpha = 0.3f), thickness = 1.dp)
+                        Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), thickness = 1.dp) // Was Line
                     }
                 }
 
@@ -287,7 +285,7 @@ fun BookDetailsScreen(
                         text = "Book Information",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MainColor
+                        color = MaterialTheme.colorScheme.primary // Was MainColor
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -303,26 +301,23 @@ fun BookDetailsScreen(
                             text = "Book ID",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium,
-                            color = Black,
+                            color = MaterialTheme.colorScheme.onSurface, // Was Black
                             modifier = Modifier.weight(0.4f)
                         )
                         Text(
                             text = book.id,
                             style = MaterialTheme.typography.bodyMedium,
                             fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                            color = Black.copy(alpha = 0.7f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), // Was Black
                             modifier = Modifier.weight(0.6f)
                         )
                     }
 
                     Divider(
-                        color = Line.copy(alpha = 0.3f),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), // Was Line
                         thickness = 1.dp,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
-
-                    // Other book metadata can be added here if needed
-                    // ...
                 }
             }
         }
@@ -334,7 +329,7 @@ private fun CategoryPill(category: String) {
     Box(
         modifier = Modifier
             .border(
-                BorderStroke(1.dp, MainColor.copy(alpha = 0.3f)),
+                BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)), // Was MainColor
                 RoundedCornerShape(50.dp)
             )
             .padding(horizontal = 12.dp, vertical = 4.dp)
@@ -342,7 +337,7 @@ private fun CategoryPill(category: String) {
         Text(
             text = category,
             style = MaterialTheme.typography.bodySmall,
-            color = MainColor,
+            color = MaterialTheme.colorScheme.primary, // Was MainColor
             fontWeight = FontWeight.Medium
         )
     }

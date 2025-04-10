@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -22,7 +21,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -45,10 +43,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
-import com.example.inspiculture.ui.theme.Black
-import com.example.inspiculture.ui.theme.Line
-import com.example.inspiculture.ui.theme.MainColor
-import com.example.inspiculture.ui.theme.White
+
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,7 +58,6 @@ fun ShowDetailsScreen(
     var expanded by remember { mutableStateOf(false) }
     val showDetails by viewModel.selectedShowDetails.observeAsState()
 
-    // Fetch details when this screen is shown
     LaunchedEffect(show.id) {
         viewModel.fetchShowDetails(show.id)
     }
@@ -72,7 +68,7 @@ fun ShowDetailsScreen(
                 title = {
                     Text(
                         "Show Details",
-                        color = MainColor,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -81,7 +77,7 @@ fun ShowDetailsScreen(
                         Icon(
                             Icons.Default.ArrowBack,
                             contentDescription = "Back",
-                            tint = MainColor
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
@@ -90,87 +86,73 @@ fun ShowDetailsScreen(
                         Icon(
                             imageVector = if (show.isFavoris) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
                             contentDescription = if (show.isFavoris) "Remove from favorites" else "Add to favorites",
-                            tint = if (show.isFavoris) MainColor else Line
+                            tint = if (show.isFavoris) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = White
-                )
+                }
             )
-        },
-        containerColor = White
+        }
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize()
-                .background(White)
+                .background(MaterialTheme.colorScheme.background)
         ) {
             item {
-                // Hero section with poster and basic info
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
-                        .padding(bottom = 16.dp)
+                        .padding(top = 16.dp)
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        // Show poster with border
-                        Box(
-                            modifier = Modifier
-                                .padding(top = 16.dp, bottom = 24.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            show.poster_path?.let { path ->
-                                Box(
-                                    modifier = Modifier
-                                        .size(200.dp, 280.dp)
-                                        .border(
-                                            BorderStroke(1.dp, Line),
-                                            RoundedCornerShape(8.dp)
-                                        )
-                                        .padding(1.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                ) {
-                                    AsyncImage(
-                                        model = "https://image.tmdb.org/t/p/w500$path",
-                                        contentDescription = "Show Poster",
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentScale = ContentScale.Crop
+                        show.poster_path?.let { path ->
+                            Box(
+                                modifier = Modifier
+                                    .padding(top = 16.dp, bottom = 24.dp)
+                                    .size(200.dp, 280.dp)
+                                    .border(
+                                        BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                                        RoundedCornerShape(8.dp)
                                     )
-                                }
+                                    .padding(1.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                            ) {
+                                AsyncImage(
+                                    model = "https://image.tmdb.org/t/p/w500$path",
+                                    contentDescription = "Show Poster",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
                             }
                         }
 
-                        // Title with elegant styling
                         Text(
                             text = show.title,
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
-                            color = Black,
+                            color = MaterialTheme.colorScheme.onBackground,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.padding(horizontal = 16.dp)
                         )
 
-                        // Genres with subtle styling
                         show.genreNames?.let { genres ->
                             if (genres.isNotEmpty()) {
                                 Text(
                                     text = genres.joinToString(", "),
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Normal,
-                                    color = Black.copy(alpha = 0.7f),
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
                                 )
                             }
                         }
 
-                        // Categories as pills (from detailed genres if available)
                         showDetails?.genres?.let { genres ->
                             if (genres.isNotEmpty()) {
                                 Row(
@@ -187,7 +169,6 @@ fun ShowDetailsScreen(
                             }
                         }
 
-                        // Release Date
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -200,16 +181,15 @@ fun ShowDetailsScreen(
                                     text = "Released: $it",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Medium,
-                                    color = MainColor
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                             }
                         }
                     }
                 }
 
-                Divider(color = Line.copy(alpha = 0.3f), thickness = 1.dp)
+                Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), thickness = 1.dp)
 
-                // Overview section with expand/collapse
                 show.overview?.let { overview ->
                     Column(
                         modifier = Modifier
@@ -220,7 +200,7 @@ fun ShowDetailsScreen(
                             text = "About this show",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = MainColor
+                            color = MaterialTheme.colorScheme.primary
                         )
 
                         Spacer(modifier = Modifier.height(8.dp))
@@ -228,7 +208,7 @@ fun ShowDetailsScreen(
                         Text(
                             text = overview,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Black.copy(alpha = 0.8f),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
                             maxLines = if (expanded) Int.MAX_VALUE else 4,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.animateContentSize()
@@ -237,7 +217,7 @@ fun ShowDetailsScreen(
                         TextButton(
                             onClick = { expanded = !expanded },
                             colors = ButtonDefaults.textButtonColors(
-                                contentColor = MainColor
+                                contentColor = MaterialTheme.colorScheme.primary
                             )
                         ) {
                             Text(
@@ -247,10 +227,9 @@ fun ShowDetailsScreen(
                         }
                     }
 
-                    Divider(color = Line.copy(alpha = 0.3f), thickness = 1.dp)
+                    Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), thickness = 1.dp)
                 }
 
-                // Watch Providers section if available
                 showDetails?.watch_providers?.results?.get("US")?.let { usProviders ->
                     usProviders.flatrate?.let { providers ->
                         if (providers.isNotEmpty()) {
@@ -263,7 +242,7 @@ fun ShowDetailsScreen(
                                     text = "Where to Watch",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
-                                    color = MainColor
+                                    color = MaterialTheme.colorScheme.primary
                                 )
 
                                 Spacer(modifier = Modifier.height(16.dp))
@@ -274,7 +253,7 @@ fun ShowDetailsScreen(
                                     items(providers) { provider ->
                                         OutlinedButton(
                                             onClick = { /* Handle watch link */ },
-                                            border = BorderStroke(1.dp, MainColor),
+                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                                             contentPadding = PaddingValues(vertical = 12.dp, horizontal = 16.dp)
                                         ) {
                                             provider.logo_path?.let { logo ->
@@ -289,7 +268,7 @@ fun ShowDetailsScreen(
                                             }
                                             Text(
                                                 text = provider.provider_name,
-                                                color = MainColor,
+                                                color = MaterialTheme.colorScheme.primary,
                                                 fontWeight = FontWeight.Medium,
                                                 fontSize = 14.sp
                                             )
@@ -298,12 +277,11 @@ fun ShowDetailsScreen(
                                 }
                             }
 
-                            Divider(color = Line.copy(alpha = 0.3f), thickness = 1.dp)
+                            Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), thickness = 1.dp)
                         }
                     }
                 }
 
-                // Show details in a clean format
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -313,12 +291,11 @@ fun ShowDetailsScreen(
                         text = "Show Information",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MainColor
+                        color = MaterialTheme.colorScheme.primary
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // ID
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -329,25 +306,24 @@ fun ShowDetailsScreen(
                             text = "Show ID",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium,
-                            color = Black,
+                            color = MaterialTheme.colorScheme.onBackground,
                             modifier = Modifier.weight(0.4f)
                         )
                         Text(
                             text = show.id.toString(),
                             style = MaterialTheme.typography.bodyMedium,
                             fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                            color = Black.copy(alpha = 0.7f),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                             modifier = Modifier.weight(0.6f)
                         )
                     }
 
                     Divider(
-                        color = Line.copy(alpha = 0.3f),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                         thickness = 1.dp,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
 
-                    // Runtime
                     showDetails?.runtime?.let { runtime ->
                         Row(
                             modifier = Modifier
@@ -359,24 +335,23 @@ fun ShowDetailsScreen(
                                 text = "Runtime",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Medium,
-                                color = Black,
+                                color = MaterialTheme.colorScheme.onBackground,
                                 modifier = Modifier.weight(0.4f)
                             )
                             Text(
                                 text = "$runtime minutes",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Black.copy(alpha = 0.7f),
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                                 modifier = Modifier.weight(0.6f)
                             )
                         }
                         Divider(
-                            color = Line.copy(alpha = 0.3f),
+                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                             thickness = 1.dp,
                             modifier = Modifier.padding(vertical = 8.dp)
                         )
                     }
 
-                    // Production Companies
                     showDetails?.production_companies?.let { companies ->
                         if (companies.isNotEmpty()) {
                             Row(
@@ -389,25 +364,24 @@ fun ShowDetailsScreen(
                                     text = "Production",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Medium,
-                                    color = Black,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.weight(0.4f)
                                 )
                                 Text(
                                     text = companies.joinToString(", ") { it.name },
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = Black.copy(alpha = 0.7f),
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                                     modifier = Modifier.weight(0.6f)
                                 )
                             }
                             Divider(
-                                color = Line.copy(alpha = 0.3f),
+                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                                 thickness = 1.dp,
                                 modifier = Modifier.padding(vertical = 8.dp)
                             )
                         }
                     }
 
-                    // Cast
                     showDetails?.credits?.cast?.let { cast ->
                         if (cast.isNotEmpty()) {
                             Row(
@@ -420,25 +394,24 @@ fun ShowDetailsScreen(
                                     text = "Cast",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Medium,
-                                    color = Black,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.weight(0.4f)
                                 )
                                 Text(
                                     text = cast.take(5).joinToString(", ") { it.name },
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = Black.copy(alpha = 0.7f),
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                                     modifier = Modifier.weight(0.6f)
                                 )
                             }
                             Divider(
-                                color = Line.copy(alpha = 0.3f),
+                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                                 thickness = 1.dp,
                                 modifier = Modifier.padding(vertical = 8.dp)
                             )
                         }
                     }
 
-                    // Budget
                     showDetails?.budget?.let { budget ->
                         Row(
                             modifier = Modifier
@@ -450,24 +423,23 @@ fun ShowDetailsScreen(
                                 text = "Budget",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Medium,
-                                color = Black,
+                                color = MaterialTheme.colorScheme.onBackground,
                                 modifier = Modifier.weight(0.4f)
                             )
                             Text(
                                 text = "$$budget",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Black.copy(alpha = 0.7f),
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                                 modifier = Modifier.weight(0.6f)
                             )
                         }
                         Divider(
-                            color = Line.copy(alpha = 0.3f),
+                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                             thickness = 1.dp,
                             modifier = Modifier.padding(vertical = 8.dp)
                         )
                     }
 
-                    // Homepage
                     showDetails?.homepage?.let { homepage ->
                         if (homepage.isNotEmpty()) {
                             Row(
@@ -480,13 +452,13 @@ fun ShowDetailsScreen(
                                     text = "Homepage",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Medium,
-                                    color = Black,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.weight(0.4f)
                                 )
                                 Text(
                                     text = homepage,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = MainColor,
+                                    color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier
                                         .weight(0.6f)
                                         .clickable { /* Add URL handling */ }
@@ -505,7 +477,7 @@ private fun CategoryPill(category: String) {
     Box(
         modifier = Modifier
             .border(
-                BorderStroke(1.dp, MainColor.copy(alpha = 0.3f)),
+                BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
                 RoundedCornerShape(50.dp)
             )
             .padding(horizontal = 12.dp, vertical = 4.dp)
@@ -513,7 +485,7 @@ private fun CategoryPill(category: String) {
         Text(
             text = category,
             style = MaterialTheme.typography.bodySmall,
-            color = MainColor,
+            color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Medium
         )
     }

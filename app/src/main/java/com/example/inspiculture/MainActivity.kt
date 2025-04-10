@@ -15,7 +15,9 @@ import com.example.inspiculture.BooksScreen.BookDetailsScreen
 import com.example.inspiculture.BooksScreen.BooksScreen
 import com.example.inspiculture.HomeScreen.HomeScreen
 import com.example.inspiculture.MusicScreen.MusicScreen
+import com.example.inspiculture.MusicScreen.TrackDetailsScreen
 import com.example.inspiculture.Retrofite.Books.Book
+import com.example.inspiculture.Retrofite.Music.Track
 import com.example.inspiculture.Retrofite.Shows.Show
 import com.example.inspiculture.SettingsScreen.SettingsScreen
 import com.example.inspiculture.ShowsScreen.ShowDetailsScreen
@@ -33,18 +35,11 @@ import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
-import javax.inject.Inject
 
 class MainActivity : ComponentActivity() {
-
     private lateinit var auth: FirebaseAuth
     private lateinit var googleSignInClient: GoogleSignInClient
     private lateinit var themePreferences: ThemePreferences
-    @Inject lateinit var booksViewModel: BooksViewModel
-    @Inject lateinit var showsViewModel: ShowsViewModel
-    @Inject lateinit var musicViewModel: MusicViewModel
-
-    var currentUser by mutableStateOf<FirebaseUser?>(null)
 
     private val signInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
@@ -55,99 +50,28 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Initialize Firebase Auth
         auth = FirebaseAuth.getInstance()
-
-        // Initialize Google Sign-In options
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(getString(R.string.default_web_client_id)) // OAuth 2.0 Client ID
+            .requestIdToken(getString(R.string.default_web_client_id))
             .requestEmail()
             .build()
-
         googleSignInClient = GoogleSignIn.getClient(this, gso)
         themePreferences = ThemePreferences(this)
 
         setContent {
             InspiCultureTheme(themePreferences = themePreferences) {
-                var selectedTab by remember { mutableStateOf(0) }
-                booksViewModel = viewModel()
-                showsViewModel = viewModel()
-                musicViewModel = viewModel()
-
-                // Screen state management
-                var currentScreen by remember { mutableStateOf<Screen>(Screen.Main(selectedTab)) }
-
-                auth.addAuthStateListener { authState ->
-                    currentUser = authState.currentUser
-                }
-
-                Column(modifier = Modifier.fillMaxSize()) {
-                    EnhancedTopBar(
-                        user = currentUser,
-                        signInAction = { signIn() }
-                    )
-
-                    Box(modifier = Modifier.weight(1f)) {
-                        when (val screen = currentScreen) {
-                            is Screen.Main -> {
-                                when (screen.tabIndex) {
-                                    0 -> HomeScreen(
-                                        booksViewModel = booksViewModel,
-                                        showsViewModel = showsViewModel,
-                                        musicViewModel = musicViewModel,
-                                        onTabChange = { index ->
-                                            selectedTab = index
-                                            currentScreen = Screen.Main(index)
-                                        },
-                                        onDetailsClick = { id, type ->
-                                            Log.d("HomeScreen", "Details clicked: $type with id $id")
-                                        }
-                                    )
-                                    1 -> BooksScreen(
-                                        viewModel = booksViewModel,
-                                        onDetailsClick = { book ->
-                                            currentScreen = Screen.BookDetails(book)
-                                        }
-                                    )
-                                    2 -> ShowsScreen(
-                                        viewModel = showsViewModel,
-                                        onDetailsClick = { show ->
-                                            currentScreen = Screen.ShowDetails(show)
-                                        }
-                                    )
-                                    3 -> MusicScreen(viewModel = musicViewModel)
-                                    4 -> SettingsScreen(themePreferences = themePreferences)
-                                }
-                            }
-                            is Screen.BookDetails -> {
-                                BookDetailsScreen(
-                                    book = screen.book,
-                                    onBackClick = {
-                                        currentScreen = Screen.Main(selectedTab) // Return to previous tab
-                                    }
-                                )
-                            }
-                            is Screen.ShowDetails -> {
-                                ShowDetailsScreen(
-                                    viewModel = showsViewModel,
-                                    show = screen.show,
-                                    onBackClick = { currentScreen = Screen.Main(selectedTab) }
-                                )
-                            }
-                        }
-                    }
-
-                    // Show tab navigation only for the main screen
-                    if (currentScreen is Screen.Main) {
-                        EnhancedTabNavigation(
-                            selectedTab = selectedTab,
-                            onTabSelected = { index ->
-                                selectedTab = index
-                                currentScreen = Screen.Main(index)
-                            }
-                        )
-                    }
-                }
+                MainScreen(
+                    booksViewModel = viewModel(),
+                    showsViewModel = viewModel(),
+                    musicViewModel = viewModel(),
+                    themePreferences = themePreferences,
+                    signInAction = { signIn() },
+                    signOutAction = {
+                        auth.signOut()
+                        googleSignInClient.signOut()
+                    },
+                    deleteAccountAction = { deleteUserAccount() }
+                )
             }
         }
     }
@@ -166,22 +90,160 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun deleteUserAccount() {
+        val user = auth.currentUser
+        user?.delete()
+            ?.addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    Log.d("MainActivity", "User account deleted.")
+                    googleSignInClient.signOut()
+                } else {
+                    Log.e("MainActivity", "Account deletion failed: ${task.exception?.message}")
+                }
+            }
+    }
+
     private fun firebaseAuthWithGoogle(idToken: String) {
         val credential = GoogleAuthProvider.getCredential(idToken, null)
         auth.signInWithCredential(credential)
             .addOnCompleteListener(this) { task ->
-                if (task.isSuccessful) {
-                    currentUser = auth.currentUser
-                } else {
+                if (!task.isSuccessful) {
                     Log.w("MainActivity", "signInWithCredential:failure", task.exception)
                 }
             }
     }
 }
 
-// Sealed class to represent different screens
+@Composable
+fun MainScreen(
+    booksViewModel: BooksViewModel,
+    showsViewModel: ShowsViewModel,
+    musicViewModel: MusicViewModel,
+    themePreferences: ThemePreferences,
+    signInAction: () -> Unit,
+    signOutAction: () -> Unit,
+    deleteAccountAction: () -> Unit
+) {
+    var selectedTab by remember { mutableStateOf(0) }
+    var currentScreen by remember { mutableStateOf<Screen>(Screen.Main(selectedTab)) }
+    var isSidebarOpen by remember { mutableStateOf(false) }
+    val user = FirebaseAuth.getInstance().currentUser
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            EnhancedTopBar(
+                user = user,
+                signInAction = signInAction,
+                onDetailsClick = { isSidebarOpen = true }
+            )
+
+            Box(modifier = Modifier.weight(1f)) {
+                when (val screen = currentScreen) {
+                    is Screen.Main -> {
+                        when (screen.tabIndex) {
+                            0 -> HomeScreen(
+                                booksViewModel = booksViewModel,
+                                showsViewModel = showsViewModel,
+                                musicViewModel = musicViewModel,
+                                onTabChange = { index ->
+                                    selectedTab = index
+                                    currentScreen = Screen.Main(index)
+                                },
+                                onDetailsClick = { id, type ->
+                                    Log.d("HomeScreen", "Details clicked: $type with id $id")
+                                }
+                            )
+                            1 -> BooksScreen(
+                                viewModel = booksViewModel,
+                                onDetailsClick = { book ->
+                                    currentScreen = Screen.BookDetails(book)
+                                }
+                            )
+                            2 -> ShowsScreen(
+                                viewModel = showsViewModel,
+                                onDetailsClick = { show ->
+                                    currentScreen = Screen.ShowDetails(show)
+                                }
+                            )
+                            3 -> MusicScreen(
+                                viewModel = musicViewModel,
+                                onDetailsClick = { track ->
+                                    currentScreen = Screen.TrackDetails(track)
+                                }
+                            )
+                            4 -> SettingsScreen(
+                                themePreferences = themePreferences,
+                                onDeleteGoogleAccount = deleteAccountAction
+                            )
+                        }
+                    }
+                    is Screen.BookDetails -> {
+                        BookDetailsScreen(
+                            book = screen.book,
+                            onBackClick = {
+                                currentScreen = Screen.Main(selectedTab)
+                            }
+                        )
+                    }
+                    is Screen.ShowDetails -> {
+                        ShowDetailsScreen(
+                            viewModel = showsViewModel,
+                            show = screen.show,
+                            onBackClick = { currentScreen = Screen.Main(selectedTab) }
+                        )
+                    }
+                    is Screen.TrackDetails -> {
+                        TrackDetailsScreen(
+                            viewModel = musicViewModel,
+                            track = screen.track,
+                            onBackClick = { currentScreen = Screen.Main(selectedTab) },
+                            onToggleFavorite = { /* Implement if needed */ }
+                        )
+                    }
+                }
+            }
+
+            if (currentScreen is Screen.Main) {
+                EnhancedTabNavigation(
+                    selectedTab = selectedTab,
+                    onTabSelected = { index ->
+                        selectedTab = index
+                        currentScreen = Screen.Main(index)
+                    }
+                )
+            }
+        }
+
+        InspiCultureSidebar(
+            isOpen = isSidebarOpen,
+            user = user,
+            onSavedBooksClick = {
+                isSidebarOpen = false
+                selectedTab = 1
+                currentScreen = Screen.Main(1)
+            },
+            onSavedFilmsClick = {
+                isSidebarOpen = false
+                selectedTab = 2
+                currentScreen = Screen.Main(2)
+            },
+            onSavedMusicClick = {
+                isSidebarOpen = false
+                selectedTab = 3
+                currentScreen = Screen.Main(3)
+            },
+            onLogoutClick = {
+                signOutAction()
+                isSidebarOpen = false
+            },
+            onClose = { isSidebarOpen = false }
+        )
+    }
+}
+
 sealed class Screen {
     data class Main(val tabIndex: Int) : Screen()
     data class BookDetails(val book: Book) : Screen()
-    data class ShowDetails(val show: Show) : Screen() // Added for shows
+    data class ShowDetails(val show: Show) : Screen()
+    data class TrackDetails(val track: Track) : Screen()
 }

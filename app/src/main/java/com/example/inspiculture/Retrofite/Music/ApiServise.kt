@@ -9,6 +9,7 @@ import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Url
+import retrofit2.http.*
 
 interface MusicApiService {
     @GET("search")
@@ -20,7 +21,7 @@ interface MusicApiService {
     @GET("browse/categories")
     fun getCategories(
         @Query("limit") limit: Int = 20,
-        @Query("country") country: String = "US" // Default to "US", can be dynamic
+        @Query("country") country: String = "US"
     ): Call<CategoryResponse>
 
     @GET("browse/categories/{category_id}/playlists")
@@ -34,8 +35,13 @@ interface MusicApiService {
     fun getPlaylistTracks(
         @Url url: String
     ): Call<TrackResponse>
-}
-interface TokenApiService {
+
+    // New endpoint for track details
+    @GET("tracks/{id}")
+    fun getTrackDetails(
+        @Path("id") id: String
+    ): Call<TrackDetails>
+}interface TokenApiService {
     @FormUrlEncoded
     @POST("api/token")
     fun getAccessToken(
