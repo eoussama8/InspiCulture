@@ -35,10 +35,6 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.inspiculture.R
 import com.example.inspiculture.Retrofite.Books.Book
-import com.example.inspiculture.ui.theme.Black
-import com.example.inspiculture.ui.theme.Line
-import com.example.inspiculture.ui.theme.MainColor
-import com.example.inspiculture.ui.theme.White
 import com.example.inspiculture.viewModel.BooksViewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
@@ -292,7 +288,8 @@ fun CategoryText(
 fun BooksList(
     books: List<Book>,
     isGridView: Boolean,
-    onDetailsClick: (Book) -> Unit = {}
+    onDetailsClick: (Book) -> Unit = {},
+    onToggleSave: (Book) -> Unit = {} // Add this
 ) {
     if (isGridView) {
         LazyVerticalGrid(
@@ -300,23 +297,28 @@ fun BooksList(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.background(MaterialTheme.colorScheme.background) // Ensure grid background
+            modifier = Modifier.background(MaterialTheme.colorScheme.background)
         ) {
             items(books) { book ->
-                ImprovedBookGridItem(book, onDetailsClick = { onDetailsClick(book) })
+                ImprovedBookGridItem(
+                    book = book,
+                    onDetailsClick = { onDetailsClick(book) },
+                    onToggleSave = { onToggleSave(book) } // Pass toggle handler
+                )
             }
         }
     } else {
         LazyColumn(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.background(MaterialTheme.colorScheme.background) // Ensure list background
+            modifier = Modifier.background(MaterialTheme.colorScheme.background)
         ) {
             items(books, key = { it.id ?: it.title }) { book ->
                 ImprovedBookListItem(
                     book = book,
                     modifier = Modifier.animateItemPlacement(),
-                    onDetailsClick = { onDetailsClick(book) }
+                    onDetailsClick = { onDetailsClick(book) },
+                    onToggleSave = { onToggleSave(book) } // Make sure this is added in list item too
                 )
             }
         }
@@ -324,8 +326,11 @@ fun BooksList(
 }
 
 @Composable
-fun ImprovedBookGridItem(book: Book, onDetailsClick: () -> Unit) {
-    var isSaved by remember { mutableStateOf(false) }
+fun ImprovedBookGridItem(
+    book: Book,
+    onDetailsClick: () -> Unit,
+    onToggleSave: () -> Unit
+) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -337,7 +342,7 @@ fun ImprovedBookGridItem(book: Book, onDetailsClick: () -> Unit) {
                 shape = RoundedCornerShape(12.dp)
             ),
         shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surface // Should be Black in dark mode
+        color = MaterialTheme.colorScheme.surface
     ) {
         Column {
             Box(
@@ -346,7 +351,7 @@ fun ImprovedBookGridItem(book: Book, onDetailsClick: () -> Unit) {
                     .height(180.dp)
             ) {
                 val imageUrl = book.imageLinks?.thumbnail
-                if (imageUrl != null && imageUrl.isNotEmpty()) {
+                if (!imageUrl.isNullOrEmpty()) {
                     AsyncImage(
                         model = imageUrl,
                         contentDescription = "Book Cover",
@@ -370,6 +375,7 @@ fun ImprovedBookGridItem(book: Book, onDetailsClick: () -> Unit) {
                         )
                     }
                 }
+
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -383,20 +389,22 @@ fun ImprovedBookGridItem(book: Book, onDetailsClick: () -> Unit) {
                             )
                         )
                 )
+
                 IconButton(
-                    onClick = { isSaved = !isSaved },
+                    onClick = onToggleSave,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .size(32.dp)
                 ) {
                     Icon(
-                        painter = painterResource(id = if (isSaved) R.drawable.save else R.drawable.unsave),
-                        contentDescription = if (isSaved) "Unsave" else "Save",
+                        painter = painterResource(id = if (book.isFavoris) R.drawable.save else R.drawable.unsave),
+                        contentDescription = if (book.isFavoris) "Unsave" else "Save",
                         modifier = Modifier.size(20.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -424,13 +432,14 @@ fun ImprovedBookGridItem(book: Book, onDetailsClick: () -> Unit) {
     }
 }
 
+
 @Composable
 fun ImprovedBookListItem(
     book: Book,
     modifier: Modifier = Modifier,
-    onDetailsClick: () -> Unit
+    onDetailsClick: () -> Unit,
+    onToggleSave: () -> Unit // <-- Add this
 ) {
-    var isSaved by remember { mutableStateOf(false) }
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -442,14 +451,16 @@ fun ImprovedBookListItem(
                 shape = RoundedCornerShape(12.dp)
             ),
         shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surface // Should be Black in dark mode
+        color = MaterialTheme.colorScheme.surface
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
-            Box(modifier = Modifier
-                .width(100.dp)
-                .fillMaxHeight()) {
+            Box(
+                modifier = Modifier
+                    .width(100.dp)
+                    .fillMaxHeight()
+            ) {
                 val imageUrl = book.imageLinks?.thumbnail
-                if (imageUrl != null && imageUrl.isNotEmpty()) {
+                if (!imageUrl.isNullOrEmpty()) {
                     AsyncImage(
                         model = imageUrl,
                         contentDescription = "Book Cover",
@@ -474,6 +485,7 @@ fun ImprovedBookListItem(
                     }
                 }
             }
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -527,12 +539,12 @@ fun ImprovedBookListItem(
                         )
                     }
                     IconButton(
-                        onClick = { isSaved = !isSaved },
+                        onClick = onToggleSave, // <-- Hook into ViewModel
                         modifier = Modifier.size(32.dp)
                     ) {
                         Icon(
-                            painter = painterResource(id = if (isSaved) R.drawable.save else R.drawable.unsave),
-                            contentDescription = if (isSaved) "Unsave" else "Save",
+                            painter = painterResource(id = if (book.isFavoris) R.drawable.save else R.drawable.unsave),
+                            contentDescription = if (book.isFavoris) "Unsave" else "Save",
                             modifier = Modifier.size(20.dp),
                             tint = MaterialTheme.colorScheme.primary
                         )

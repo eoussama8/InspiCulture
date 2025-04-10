@@ -12,7 +12,7 @@ data class Show(
     val isFavoris: Boolean,
     val genre_ids: List<Int> = emptyList(),
     @Transient
-    val genreNames: List<String> = emptyList()  // Mark as non-serializable
+    val genreNames: List<String> = emptyList()
 ) {
     val genreIds: List<Int>? get() = genre_ids
 }

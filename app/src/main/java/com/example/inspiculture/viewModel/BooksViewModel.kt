@@ -28,6 +28,9 @@ class BooksViewModel : ViewModel() {
 
     private val retrofitService = RetrofitClient.apiService
 
+    private val _savedBooks = mutableSetOf<String>() // IDs of saved books
+
+
     private var currentQuery = "book" // Default initial search
 
     init {
@@ -106,5 +109,22 @@ class BooksViewModel : ViewModel() {
 
     fun selectCategory(category: String) {
         _selectedCategory.value = category
+    }
+
+    fun toggleSave(bookId: String) {
+        if (_savedBooks.contains(bookId)) {
+            _savedBooks.remove(bookId)
+        } else {
+            _savedBooks.add(bookId)
+        }
+
+        // Update books list to reflect the change
+        _books.value = _books.value?.map {
+            if (it.id == bookId) it.copy(isFavoris = !_savedBooks.contains(bookId)) else it
+        }
+    }
+
+    fun getSavedBooks(): List<Book> {
+        return _books.value?.filter { _savedBooks.contains(it.id) } ?: emptyList()
     }
 }
