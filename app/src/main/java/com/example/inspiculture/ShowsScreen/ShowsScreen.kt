@@ -24,6 +24,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -32,12 +33,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
 import com.example.inspiculture.R
 import com.example.inspiculture.Retrofite.Shows.Show
 import com.example.inspiculture.viewModel.ShowsViewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -60,7 +63,7 @@ fun ShowsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background) // Adaptive background
+            .background(MaterialTheme.colorScheme.background)
     ) {
         ShowsTopAppBar(
             searchQuery = searchQuery,
@@ -96,19 +99,10 @@ fun ShowsScreen(
                     ShowsList(
                         shows = shows,
                         isGridView = isGridView,
+                        isLoading = isLoading,
                         genreMap = genreMap,
                         onDetailsClick = onDetailsClick
                     )
-                }
-                if (isLoading) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)), // Adaptive overlay
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary) // Replaces MainColor
-                    }
                 }
             }
         }
@@ -128,7 +122,7 @@ fun ShowsTopAppBar(
         modifier = Modifier
             .fillMaxWidth()
             .height(if (showSearch) 100.dp else 60.dp),
-        color = MaterialTheme.colorScheme.primary // Replaces MainColor
+        color = MaterialTheme.colorScheme.primary
     ) {
         Column {
             Row(
@@ -141,7 +135,7 @@ fun ShowsTopAppBar(
             ) {
                 Text(
                     text = "Discover Shows",
-                    color = MaterialTheme.colorScheme.background, // Replaces White
+                    color = MaterialTheme.colorScheme.onPrimary,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -157,7 +151,7 @@ fun ShowsTopAppBar(
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Search",
-                            tint = MaterialTheme.colorScheme.background, // Replaces White
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -167,9 +161,9 @@ fun ShowsTopAppBar(
                         modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
-                            painter = if (isGridView) painterResource(R.drawable.grid) else painterResource(R.drawable.details),
+                            painter = painterResource(id = if (isGridView) R.drawable.grid else R.drawable.details),
                             contentDescription = "Toggle View",
-                            tint = MaterialTheme.colorScheme.background, // Replaces White
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -187,7 +181,7 @@ fun ShowsTopAppBar(
                     placeholder = {
                         Text(
                             "Search by title, overview or genre",
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), // Replaces White
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                             fontSize = 14.sp
                         )
                     },
@@ -195,7 +189,7 @@ fun ShowsTopAppBar(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surface, // Adaptive contrast
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                         disabledContainerColor = MaterialTheme.colorScheme.surface,
                         focusedIndicatorColor = MaterialTheme.colorScheme.onPrimary,
@@ -207,7 +201,7 @@ fun ShowsTopAppBar(
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary, // Replaces White
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(18.dp)
                         )
                     },
@@ -217,7 +211,7 @@ fun ShowsTopAppBar(
                                 Icon(
                                     painter = painterResource(id = R.drawable.unsave),
                                     contentDescription = "Clear search",
-                                    tint = MaterialTheme.colorScheme.onPrimary, // Replaces White
+                                    tint = MaterialTheme.colorScheme.onPrimary,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -272,7 +266,7 @@ fun CategoryText(
     ) {
         Text(
             text = category,
-            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), // Replaces MainColor and Black
+            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
             fontSize = 16.sp,
             modifier = Modifier.padding(bottom = 2.dp)
@@ -283,7 +277,7 @@ fun CategoryText(
                 modifier = Modifier
                     .width(40.dp)
                     .height(2.dp)
-                    .background(MaterialTheme.colorScheme.primary) // Replaces MainColor
+                    .background(MaterialTheme.colorScheme.primary)
             )
         }
     }
@@ -294,6 +288,7 @@ fun CategoryText(
 fun ShowsList(
     shows: List<Show>,
     isGridView: Boolean,
+    isLoading: Boolean,
     genreMap: Map<Int, String> = emptyMap(),
     onDetailsClick: (Show) -> Unit = {}
 ) {
@@ -303,30 +298,47 @@ fun ShowsList(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.background(MaterialTheme.colorScheme.background) // Adaptive background
+            modifier = Modifier.background(MaterialTheme.colorScheme.background)
         ) {
-            items(shows, key = { it.id }) { show ->
-                ImprovedShowGridItem(show = show, genreMap = genreMap, onDetailsClick = { onDetailsClick(show) })
+            if (isLoading && shows.isEmpty()) {
+                items(6) {
+                    PlaceholderShowGridItem()
+                }
+            } else {
+                items(shows, key = { it.id }) { show ->
+                    ImprovedShowGridItem(
+                        show = show,
+                        genreMap = genreMap,
+                        onDetailsClick = { onDetailsClick(show) }
+                    )
+                }
             }
         }
     } else {
         LazyColumn(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.background(MaterialTheme.colorScheme.background) // Adaptive background
+            modifier = Modifier.background(MaterialTheme.colorScheme.background)
         ) {
-            items(shows, key = { it.id }) { show ->
-                ImprovedShowListItem(
-                    show = show,
-                    genreMap = genreMap,
-                    modifier = Modifier.animateItemPlacement(),
-                    onDetailsClick = { onDetailsClick(show) }
-                )
+            if (isLoading && shows.isEmpty()) {
+                items(6) {
+                    PlaceholderShowListItem()
+                }
+            } else {
+                items(shows, key = { it.id }) { show ->
+                    ImprovedShowListItem(
+                        show = show,
+                        genreMap = genreMap,
+                        modifier = Modifier.animateItemPlacement(),
+                        onDetailsClick = { onDetailsClick(show) }
+                    )
+                }
             }
         }
     }
 }
 
+@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun ImprovedShowGridItem(
     show: Show,
@@ -334,7 +346,7 @@ fun ImprovedShowGridItem(
     onDetailsClick: () -> Unit
 ) {
     var isSaved by remember { mutableStateOf(show.isFavoris) }
-    val imageUrl = "https://image.tmdb.org/t/p/w500${show.poster_path}"
+    val imageUrl = show.poster_path?.let { "https://image.tmdb.org/t/p/w500$it" }
 
     Surface(
         modifier = Modifier
@@ -343,11 +355,11 @@ fun ImprovedShowGridItem(
             .clickable { onDetailsClick() }
             .border(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.outline, // Replaces Color.LightGray
+                color = MaterialTheme.colorScheme.outline,
                 shape = RoundedCornerShape(12.dp)
             ),
         shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surface // Replaces White
+        color = MaterialTheme.colorScheme.surface
     ) {
         Column {
             Box(
@@ -355,18 +367,21 @@ fun ImprovedShowGridItem(
                     .fillMaxWidth()
                     .height(180.dp)
             ) {
-                if (show.poster_path != null && show.poster_path.isNotEmpty()) {
-                    AsyncImage(
+                if (!imageUrl.isNullOrEmpty()) {
+                    GlideImage(
                         model = imageUrl,
                         contentDescription = "Show Cover",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    ) {
+                        it.placeholder(R.drawable.placeholder)
+                            .error(R.drawable.err)
+                    }
                 } else {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)), // Replaces Line
+                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -375,7 +390,7 @@ fun ImprovedShowGridItem(
                             modifier = Modifier
                                 .size(60.dp)
                                 .padding(8.dp),
-                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) // Replaces MainColor
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                         )
                     }
                 }
@@ -387,7 +402,7 @@ fun ImprovedShowGridItem(
                             brush = Brush.verticalGradient(
                                 colors = listOf(
                                     Color.Transparent,
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f) // Replaces Black
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
                                 ),
                                 startY = 120f
                             )
@@ -407,7 +422,7 @@ fun ImprovedShowGridItem(
                         ),
                         contentDescription = if (isSaved) "Unsave" else "Save",
                         modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.primary // Replaces MainColor
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -424,7 +439,7 @@ fun ImprovedShowGridItem(
                         fontWeight = FontWeight.Bold,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onSurface // Replaces Black
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
                     val genreNames = show.genreIds?.mapNotNull { genreMap[it] }?.joinToString(", ")
@@ -433,7 +448,7 @@ fun ImprovedShowGridItem(
                     Text(
                         text = genreNames,
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), // Replaces Line
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -443,6 +458,7 @@ fun ImprovedShowGridItem(
     }
 }
 
+@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun ImprovedShowListItem(
     show: Show,
@@ -460,11 +476,11 @@ fun ImprovedShowListItem(
             .clickable { onDetailsClick() }
             .border(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.outline, // Replaces Color.LightGray
+                color = MaterialTheme.colorScheme.outline,
                 shape = RoundedCornerShape(12.dp)
             ),
         shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surface // Replaces White
+        color = MaterialTheme.colorScheme.surface
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
             Box(
@@ -473,24 +489,27 @@ fun ImprovedShowListItem(
                     .fillMaxHeight()
             ) {
                 if (!posterUrl.isNullOrEmpty()) {
-                    AsyncImage(
+                    GlideImage(
                         model = posterUrl,
                         contentDescription = "Poster",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    ) {
+                        it.placeholder(R.drawable.placeholder)
+                            .error(R.drawable.err)
+                    }
                 } else {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)), // Replaces Line
+                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.err),
                             contentDescription = "No Image",
                             modifier = Modifier.size(40.dp),
-                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) // Replaces MainColor
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                         )
                     }
                 }
@@ -508,7 +527,7 @@ fun ImprovedShowListItem(
                         fontWeight = FontWeight.Bold,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onSurface // Replaces Black
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
@@ -534,12 +553,12 @@ fun ImprovedShowListItem(
                         onClick = onDetailsClick,
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
                         colors = ButtonDefaults.textButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) // Subtle background
+                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                         )
                     ) {
                         Text(
                             text = "Details",
-                            color = MaterialTheme.colorScheme.primary, // Replaces MainColor
+                            color = MaterialTheme.colorScheme.primary,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -555,7 +574,7 @@ fun ImprovedShowListItem(
                             ),
                             contentDescription = if (isSaved) "Unsave" else "Save",
                             modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colorScheme.primary // Replaces MainColor
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -568,12 +587,12 @@ fun ImprovedShowListItem(
 fun MiniCategoryChip(category: String) {
     Surface(
         shape = RoundedCornerShape(4.dp),
-        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) // Replaces MainColor
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
     ) {
         Text(
             text = category,
             fontSize = 10.sp,
-            color = MaterialTheme.colorScheme.onPrimary, // Better contrast, replaces MainColor
+            color = MaterialTheme.colorScheme.onPrimary,
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
@@ -586,7 +605,7 @@ fun ErrorMessage(message: String) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background), // Adaptive background
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -606,12 +625,12 @@ fun ErrorMessage(message: String) {
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
             Button(
-                onClick = { /* Retry logic could be added here */ },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary) // Replaces MainColor
+                onClick = { /* TODO: Implement retry logic in ViewModel */ },
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Text(
                     text = "Retry",
-                    color = MaterialTheme.colorScheme.onPrimary // Adaptive text color
+                    color = MaterialTheme.colorScheme.onPrimary
                 )
             }
         }
@@ -623,7 +642,7 @@ fun EmptyStateMessage(category: String) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background), // Adaptive background
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -640,8 +659,125 @@ fun EmptyStateMessage(category: String) {
                 text = if (category == "All") "No shows found" else "No shows found in $category category",
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                color = MaterialTheme.colorScheme.onBackground // Adaptive text color
+                color = MaterialTheme.colorScheme.onBackground
             )
         }
     }
+}
+
+@Composable
+fun PlaceholderShowGridItem() {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(280.dp)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline,
+                shape = RoundedCornerShape(12.dp)
+            ),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Column {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .shimmer()
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.8f)
+                            .height(16.dp)
+                            .shimmer()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.5f)
+                            .height(12.dp)
+                            .shimmer()
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PlaceholderShowListItem() {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(140.dp)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline,
+                shape = RoundedCornerShape(12.dp)
+            ),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Row(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .width(100.dp)
+                    .fillMaxHeight()
+                    .shimmer()
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.7f)
+                            .height(16.dp)
+                            .shimmer()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.5f)
+                            .height(12.dp)
+                            .shimmer()
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun Modifier.shimmer(): Modifier {
+    var offset by remember { mutableStateOf(0f) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            offset += 0.02f
+            if (offset > 1.2f) offset = -0.2f
+            delay(16)
+        }
+    }
+    return this.background(
+        brush = Brush.linearGradient(
+            colors = listOf(
+                MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+                MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+            ),
+            start = Offset(offset * 1000f, 0f),
+            end = Offset((offset + 0.4f) * 1000f, 0f)
+        )
+    )
 }

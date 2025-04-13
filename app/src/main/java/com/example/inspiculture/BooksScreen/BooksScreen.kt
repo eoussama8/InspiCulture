@@ -24,6 +24,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -32,12 +33,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
 import com.example.inspiculture.R
 import com.example.inspiculture.Retrofite.Books.Book
 import com.example.inspiculture.viewModel.BooksViewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -58,7 +61,7 @@ fun BooksScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background) // Ensure screen background adapts
+            .background(MaterialTheme.colorScheme.background)
     ) {
         BooksTopAppBar(
             searchQuery = searchQuery,
@@ -90,7 +93,7 @@ fun BooksScreen(
                     val filteredBooks = if (selectedCategory == "All") {
                         books
                     } else {
-                        books.filter { it.categories?.any { cat -> cat.equals(selectedCategory, true) } == true }
+                        books.filter { it.categories?.any { cat -> cat.equals(selectedCategory, ignoreCase = true) } == true }
                     }
 
                     if (filteredBooks.isEmpty() && !isLoading) {
@@ -99,19 +102,9 @@ fun BooksScreen(
                         BooksList(
                             books = filteredBooks,
                             isGridView = isGridView,
+                            isLoading = isLoading,
                             onDetailsClick = onDetailsClick
                         )
-                    }
-                }
-
-                if (isLoading) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
@@ -145,7 +138,7 @@ fun BooksTopAppBar(
             ) {
                 Text(
                     text = "Discover Books",
-                    color = MaterialTheme.colorScheme.background,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -157,15 +150,15 @@ fun BooksTopAppBar(
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Search",
-                            tint = MaterialTheme.colorScheme.background,
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(20.dp)
                         )
                     }
                     IconButton(onClick = { onViewToggle(!isGridView) }, modifier = Modifier.size(40.dp)) {
                         Icon(
-                            painter = if (isGridView) painterResource(R.drawable.grid) else painterResource(R.drawable.details),
+                            painter = painterResource(id = if (isGridView) R.drawable.grid else R.drawable.details),
                             contentDescription = "Toggle View",
-                            tint = MaterialTheme.colorScheme.background,
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -288,8 +281,9 @@ fun CategoryText(
 fun BooksList(
     books: List<Book>,
     isGridView: Boolean,
+    isLoading: Boolean,
     onDetailsClick: (Book) -> Unit = {},
-    onToggleSave: (Book) -> Unit = {} // Add this
+    onToggleSave: (Book) -> Unit = {}
 ) {
     if (isGridView) {
         LazyVerticalGrid(
@@ -299,12 +293,18 @@ fun BooksList(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.background(MaterialTheme.colorScheme.background)
         ) {
-            items(books) { book ->
-                ImprovedBookGridItem(
-                    book = book,
-                    onDetailsClick = { onDetailsClick(book) },
-                    onToggleSave = { onToggleSave(book) } // Pass toggle handler
-                )
+            if (isLoading && books.isEmpty()) {
+                items(6) {
+                    PlaceholderBookGridItem()
+                }
+            } else {
+                items(books) { book ->
+                    ImprovedBookGridItem(
+                        book = book,
+                        onDetailsClick = { onDetailsClick(book) },
+                        onToggleSave = { onToggleSave(book) }
+                    )
+                }
             }
         }
     } else {
@@ -313,18 +313,25 @@ fun BooksList(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.background(MaterialTheme.colorScheme.background)
         ) {
-            items(books, key = { it.id ?: it.title }) { book ->
-                ImprovedBookListItem(
-                    book = book,
-                    modifier = Modifier.animateItemPlacement(),
-                    onDetailsClick = { onDetailsClick(book) },
-                    onToggleSave = { onToggleSave(book) } // Make sure this is added in list item too
-                )
+            if (isLoading && books.isEmpty()) {
+                items(6) {
+                    PlaceholderBookListItem()
+                }
+            } else {
+                items(books, key = { it.id ?: it.title }) { book ->
+                    ImprovedBookListItem(
+                        book = book,
+                        modifier = Modifier.animateItemPlacement(),
+                        onDetailsClick = { onDetailsClick(book) },
+                        onToggleSave = { onToggleSave(book) }
+                    )
+                }
             }
         }
     }
 }
 
+@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun ImprovedBookGridItem(
     book: Book,
@@ -352,12 +359,15 @@ fun ImprovedBookGridItem(
             ) {
                 val imageUrl = book.imageLinks?.thumbnail
                 if (!imageUrl.isNullOrEmpty()) {
-                    AsyncImage(
+                    GlideImage(
                         model = imageUrl,
                         contentDescription = "Book Cover",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    ) {
+                        it.placeholder(R.drawable.placeholder)
+                            .error(R.drawable.err)
+                    }
                 } else {
                     Box(
                         modifier = Modifier
@@ -432,13 +442,13 @@ fun ImprovedBookGridItem(
     }
 }
 
-
+@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun ImprovedBookListItem(
     book: Book,
     modifier: Modifier = Modifier,
     onDetailsClick: () -> Unit,
-    onToggleSave: () -> Unit // <-- Add this
+    onToggleSave: () -> Unit
 ) {
     Surface(
         modifier = modifier
@@ -461,12 +471,15 @@ fun ImprovedBookListItem(
             ) {
                 val imageUrl = book.imageLinks?.thumbnail
                 if (!imageUrl.isNullOrEmpty()) {
-                    AsyncImage(
+                    GlideImage(
                         model = imageUrl,
                         contentDescription = "Book Cover",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    ) {
+                        it.placeholder(R.drawable.placeholder)
+                            .error(R.drawable.err)
+                    }
                 } else {
                     Box(
                         modifier = Modifier
@@ -539,7 +552,7 @@ fun ImprovedBookListItem(
                         )
                     }
                     IconButton(
-                        onClick = onToggleSave, // <-- Hook into ViewModel
+                        onClick = onToggleSave,
                         modifier = Modifier.size(32.dp)
                     ) {
                         Icon(
@@ -577,7 +590,7 @@ fun EmptyStateMessage(category: String) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background), // Ensure background consistency
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -605,7 +618,7 @@ fun ErrorMessage(message: String) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background), // Ensure background consistency
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -625,11 +638,128 @@ fun ErrorMessage(message: String) {
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
             Button(
-                onClick = { /* Retry loading books */ },
+                onClick = { /* TODO: Implement retry logic in ViewModel */ },
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Text("Retry", color = MaterialTheme.colorScheme.onPrimary)
             }
         }
     }
+}
+
+@Composable
+fun PlaceholderBookGridItem() {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(280.dp)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline,
+                shape = RoundedCornerShape(12.dp)
+            ),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Column {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .shimmer()
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.8f)
+                            .height(16.dp)
+                            .shimmer()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.5f)
+                            .height(12.dp)
+                            .shimmer()
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PlaceholderBookListItem() {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(140.dp)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline,
+                shape = RoundedCornerShape(12.dp)
+            ),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Row(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .width(100.dp)
+                    .fillMaxHeight()
+                    .shimmer()
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.7f)
+                            .height(16.dp)
+                            .shimmer()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.5f)
+                            .height(12.dp)
+                            .shimmer()
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun Modifier.shimmer(): Modifier {
+    var offset by remember { mutableStateOf(0f) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            offset += 0.02f
+            if (offset > 1.2f) offset = -0.2f
+            delay(16)
+        }
+    }
+    return this.background(
+        brush = Brush.linearGradient(
+            colors = listOf(
+                MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+                MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+            ),
+            start = Offset(offset * 1000f, 0f),
+            end = Offset((offset + 0.4f) * 1000f, 0f)
+        )
+    )
 }

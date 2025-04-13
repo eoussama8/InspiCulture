@@ -124,4 +124,7 @@ dependencies {
 
     // For auto-mirrored icons (like back button that changes direction in RTL)
     implementation ("androidx.compose.material3:material3:1.2.0")
+
+    implementation ("com.github.bumptech.glide:compose:1.0.0-beta01")
+    implementation ("com.google.accompanist:accompanist-swiperefresh:0.36.0")
 }

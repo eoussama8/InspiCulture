@@ -24,6 +24,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -32,12 +33,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
 import com.example.inspiculture.R
 import com.example.inspiculture.Retrofite.Music.Track
 import com.example.inspiculture.viewModel.MusicViewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -60,7 +63,7 @@ fun MusicScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        BooksTopAppBar( // Reusing BooksTopAppBar
+        MusicTopAppBar(
             searchQuery = searchQuery,
             onSearchQueryChange = {
                 searchQuery = it
@@ -85,39 +88,24 @@ fun MusicScreen(
         ) {
             Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
                 if (errorMessage.isNotEmpty()) {
-                    ErrorMessage(
-                        message = errorMessage,
-                    )
+                    ErrorMessage(message = errorMessage)
+                } else if (tracks.isEmpty() && !isLoading) {
+                    EmptyStateMessage(selectedCategory)
                 } else {
-                    if (tracks.isEmpty() && !isLoading) {
-                        EmptyStateMessage(selectedCategory)
-                    } else {
-                        TracksList(
-                            tracks = tracks,
-                            isGridView = isGridView,
-                            onDetailsClick = onDetailsClick
-                        )
-                    }
-                }
-
-                if (isLoading) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)), // Dynamic overlay
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                    }
+                    TracksList(
+                        tracks = tracks,
+                        isGridView = isGridView,
+                        isLoading = isLoading,
+                        onDetailsClick = onDetailsClick
+                    )
                 }
             }
         }
     }
 }
 
-// Reusing BooksTopAppBar from BooksScreen
 @Composable
-fun BooksTopAppBar(
+fun MusicTopAppBar(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     showSearch: Boolean,
@@ -141,8 +129,8 @@ fun BooksTopAppBar(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Discover Music", // Changed to Music
-                    color = MaterialTheme.colorScheme.background,
+                    text = "Discover Music",
+                    color = MaterialTheme.colorScheme.onPrimary,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -154,15 +142,15 @@ fun BooksTopAppBar(
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Search",
-                            tint = MaterialTheme.colorScheme.background,
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(20.dp)
                         )
                     }
                     IconButton(onClick = { onViewToggle(!isGridView) }, modifier = Modifier.size(40.dp)) {
                         Icon(
-                            painter = if (isGridView) painterResource(R.drawable.grid) else painterResource(R.drawable.details),
+                            painter = painterResource(id = if (isGridView) R.drawable.grid else R.drawable.details),
                             contentDescription = "Toggle View",
-                            tint = MaterialTheme.colorScheme.background,
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -178,7 +166,7 @@ fun BooksTopAppBar(
                     onValueChange = onSearchQueryChange,
                     placeholder = {
                         Text(
-                            "Search by title or artist", // Adjusted placeholder
+                            "Search by title or artist",
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                             fontSize = 14.sp
                         )
@@ -285,6 +273,7 @@ fun CategoryText(
 fun TracksList(
     tracks: List<Track>,
     isGridView: Boolean,
+    isLoading: Boolean,
     onDetailsClick: (Track) -> Unit
 ) {
     if (isGridView) {
@@ -295,8 +284,14 @@ fun TracksList(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.background(MaterialTheme.colorScheme.background)
         ) {
-            items(tracks) { track ->
-                ImprovedTrackGridItem(track, onDetailsClick = { onDetailsClick(track) })
+            if (isLoading && tracks.isEmpty()) {
+                items(6) {
+                    PlaceholderTrackGridItem()
+                }
+            } else {
+                items(tracks) { track ->
+                    ImprovedTrackGridItem(track, onDetailsClick = { onDetailsClick(track) })
+                }
             }
         }
     } else {
@@ -305,20 +300,27 @@ fun TracksList(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.background(MaterialTheme.colorScheme.background)
         ) {
-            items(tracks, key = { it.id }) { track ->
-                ImprovedTrackListItem(
-                    track = track,
-                    modifier = Modifier.animateItemPlacement(),
-                    onDetailsClick = { onDetailsClick(track) }
-                )
+            if (isLoading && tracks.isEmpty()) {
+                items(6) {
+                    PlaceholderTrackListItem()
+                }
+            } else {
+                items(tracks, key = { it.id }) { track ->
+                    ImprovedTrackListItem(
+                        track = track,
+                        modifier = Modifier.animateItemPlacement(),
+                        onDetailsClick = { onDetailsClick(track) }
+                    )
+                }
             }
         }
     }
 }
 
+@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun ImprovedTrackGridItem(track: Track, onDetailsClick: () -> Unit) {
-    var isSaved by remember { mutableStateOf(false) }
+    var isSaved by remember { mutableStateOf(track.isFavoris ?: false) }
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -339,22 +341,25 @@ fun ImprovedTrackGridItem(track: Track, onDetailsClick: () -> Unit) {
                     .height(180.dp)
             ) {
                 val imageUrl = if (track.album.images.isNotEmpty()) track.album.images[0].url else null
-                if (imageUrl != null && imageUrl.isNotEmpty()) {
-                    AsyncImage(
+                if (!imageUrl.isNullOrEmpty()) {
+                    GlideImage(
                         model = imageUrl,
                         contentDescription = "Album Art",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    ) {
+                        it.placeholder(R.drawable.placeholder)
+                            .error(R.drawable.music)
+                    }
                 } else {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.outline),
+                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            painter = painterResource(id = R.drawable.err),
+                            painter = painterResource(id = R.drawable.music),
                             contentDescription = "No Image",
                             modifier = Modifier
                                 .size(60.dp)
@@ -370,7 +375,7 @@ fun ImprovedTrackGridItem(track: Track, onDetailsClick: () -> Unit) {
                             brush = Brush.verticalGradient(
                                 colors = listOf(
                                     Color.Transparent,
-                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
                                 ),
                                 startY = 120f
                             )
@@ -417,13 +422,14 @@ fun ImprovedTrackGridItem(track: Track, onDetailsClick: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun ImprovedTrackListItem(
     track: Track,
     modifier: Modifier = Modifier,
     onDetailsClick: () -> Unit
 ) {
-    var isSaved by remember { mutableStateOf(false) }
+    var isSaved by remember { mutableStateOf(track.isFavoris ?: false) }
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -438,26 +444,31 @@ fun ImprovedTrackListItem(
         color = MaterialTheme.colorScheme.surface
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
-            Box(modifier = Modifier
-                .width(100.dp)
-                .fillMaxHeight()) {
+            Box(
+                modifier = Modifier
+                    .width(100.dp)
+                    .fillMaxHeight()
+            ) {
                 val imageUrl = if (track.album.images.isNotEmpty()) track.album.images[0].url else null
-                if (imageUrl != null && imageUrl.isNotEmpty()) {
-                    AsyncImage(
+                if (!imageUrl.isNullOrEmpty()) {
+                    GlideImage(
                         model = imageUrl,
                         contentDescription = "Album Art",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    ) {
+                        it.placeholder(R.drawable.placeholder)
+                            .error(R.drawable.music)
+                    }
                 } else {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.outline),
+                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            painter = painterResource(id = R.drawable.err),
+                            painter = painterResource(id = R.drawable.music),
                             contentDescription = "No Image",
                             modifier = Modifier
                                 .size(40.dp)
@@ -579,11 +590,128 @@ fun ErrorMessage(message: String) {
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
             Button(
-                onClick = { /* Retry logic handled in SwipeRefresh */ },
+                onClick = { /* TODO: Implement retry logic in ViewModel */ },
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Text("Retry", color = MaterialTheme.colorScheme.onPrimary)
             }
         }
     }
+}
+
+@Composable
+fun PlaceholderTrackGridItem() {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(280.dp)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline,
+                shape = RoundedCornerShape(12.dp)
+            ),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Column {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .shimmer()
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.8f)
+                            .height(16.dp)
+                            .shimmer()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.5f)
+                            .height(12.dp)
+                            .shimmer()
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PlaceholderTrackListItem() {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(140.dp)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline,
+                shape = RoundedCornerShape(12.dp)
+            ),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Row(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .width(100.dp)
+                    .fillMaxHeight()
+                    .shimmer()
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.7f)
+                            .height(16.dp)
+                            .shimmer()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.5f)
+                            .height(12.dp)
+                            .shimmer()
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun Modifier.shimmer(): Modifier {
+    var offset by remember { mutableStateOf(0f) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            offset += 0.02f
+            if (offset > 1.2f) offset = -0.2f
+            delay(16)
+        }
+    }
+    return this.background(
+        brush = Brush.linearGradient(
+            colors = listOf(
+                MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+                MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+            ),
+            start = Offset(offset * 1000f, 0f),
+            end = Offset((offset + 0.4f) * 1000f, 0f)
+        )
+    )
 }

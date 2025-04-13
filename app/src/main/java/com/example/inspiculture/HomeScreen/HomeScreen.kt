@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -22,7 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
 import com.example.inspiculture.R
 import com.example.inspiculture.Retrofite.Books.Book
 import com.example.inspiculture.Retrofite.Music.Track
@@ -30,14 +32,15 @@ import com.example.inspiculture.Retrofite.Shows.Show
 import com.example.inspiculture.viewModel.BooksViewModel
 import com.example.inspiculture.viewModel.MusicViewModel
 import com.example.inspiculture.viewModel.ShowsViewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun HomeScreen(
     booksViewModel: BooksViewModel,
     showsViewModel: ShowsViewModel,
     musicViewModel: MusicViewModel,
-    onTabChange: (Int) -> Unit, // For switching tabs
-    onDetailsClick: (String, String) -> Unit // For details navigation: (id, type)
+    onTabChange: (Int) -> Unit,
+    onDetailsClick: (String, String) -> Unit
 ) {
     val scrollState = rememberScrollState()
 
@@ -45,13 +48,12 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .background(MaterialTheme.colorScheme.background) // Adaptive background
+            .background(MaterialTheme.colorScheme.background)
             .padding(top = 16.dp)
     ) {
-        // Books Section
         SectionHeader(
             title = "Featured Books",
-            onMoreClick = { onTabChange(1) } // Switch to Books tab
+            onMoreClick = { onTabChange(1) }
         )
         BooksSection(
             viewModel = booksViewModel,
@@ -60,10 +62,9 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Shows Section
         SectionHeader(
             title = "Featured Shows",
-            onMoreClick = { onTabChange(2) } // Switch to Shows tab
+            onMoreClick = { onTabChange(2) }
         )
         ShowsSection(
             viewModel = showsViewModel,
@@ -72,10 +73,9 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Music Section
         SectionHeader(
             title = "Featured Music",
-            onMoreClick = { onTabChange(3) } // Switch to Music tab
+            onMoreClick = { onTabChange(3) }
         )
         MusicSection(
             viewModel = musicViewModel,
@@ -105,7 +105,7 @@ fun SectionHeader(title: String, onMoreClick: () -> Unit) {
         TextButton(onClick = onMoreClick) {
             Text(
                 text = "More",
-                color = MaterialTheme.colorScheme.primary, // Replaces MainColor
+                color = MaterialTheme.colorScheme.primary,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium
             )
@@ -119,28 +119,34 @@ fun BooksSection(
     onBookClick: (Book) -> Unit
 ) {
     val books by viewModel.books.observeAsState(emptyList())
+    val isLoading by viewModel.isLoading.observeAsState(false)
     val randomBooks = remember(books) { books.shuffled().take(7) }
 
-    if (randomBooks.isEmpty()) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .padding(horizontal = 16.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "Loading books...",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onBackground // Adaptive text color
-            )
-        }
-    } else {
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.background(MaterialTheme.colorScheme.background) // Adaptive background
-        ) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.background(MaterialTheme.colorScheme.background)
+    ) {
+        if (isLoading && randomBooks.isEmpty()) {
+            items(7) {
+                PlaceholderCard()
+            }
+        } else if (randomBooks.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillParentMaxWidth()
+                        .height(220.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No books available",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+            }
+        } else {
             items(randomBooks) { book ->
                 BookCard(book = book, onClick = { onBookClick(book) })
             }
@@ -154,28 +160,34 @@ fun ShowsSection(
     onShowClick: (Show) -> Unit
 ) {
     val shows by viewModel.shows.observeAsState(emptyList())
+    val isLoading by viewModel.isLoading.observeAsState(false)
     val randomShows = remember(shows) { shows.shuffled().take(7) }
 
-    if (randomShows.isEmpty()) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .padding(horizontal = 16.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "Loading shows...",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onBackground // Adaptive text color
-            )
-        }
-    } else {
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.background(MaterialTheme.colorScheme.background) // Adaptive background
-        ) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.background(MaterialTheme.colorScheme.background)
+    ) {
+        if (isLoading && randomShows.isEmpty()) {
+            items(7) {
+                PlaceholderCard()
+            }
+        } else if (randomShows.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillParentMaxWidth()
+                        .height(220.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No shows available",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+            }
+        } else {
             items(randomShows) { show ->
                 ShowCard(show = show, onClick = { onShowClick(show) })
             }
@@ -189,28 +201,34 @@ fun MusicSection(
     onTrackClick: (Track) -> Unit
 ) {
     val tracks by viewModel.tracks.observeAsState(emptyList())
+    val isLoading by viewModel.isLoading.observeAsState(false)
     val randomTracks = remember(tracks) { tracks.shuffled().take(7) }
 
-    if (randomTracks.isEmpty()) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .padding(horizontal = 16.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "Loading tracks...",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onBackground // Adaptive text color
-            )
-        }
-    } else {
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.background(MaterialTheme.colorScheme.background) // Adaptive background
-        ) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.background(MaterialTheme.colorScheme.background)
+    ) {
+        if (isLoading && randomTracks.isEmpty()) {
+            items(7) {
+                PlaceholderCard()
+            }
+        } else if (randomTracks.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillParentMaxWidth()
+                        .height(220.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No tracks available",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+            }
+        } else {
             items(randomTracks) { track ->
                 TrackCard(track = track, onClick = { onTrackClick(track) })
             }
@@ -218,9 +236,10 @@ fun MusicSection(
     }
 }
 
+@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun BookCard(book: Book, onClick: () -> Unit) {
-    var isSaved by remember { mutableStateOf(false) }
+    var isSaved by remember { mutableStateOf(book.isFavoris) }
 
     Surface(
         modifier = Modifier
@@ -229,11 +248,11 @@ fun BookCard(book: Book, onClick: () -> Unit) {
             .clickable(onClick = onClick)
             .border(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.outline, // Replaces Color.LightGray
+                color = MaterialTheme.colorScheme.outline,
                 shape = RoundedCornerShape(12.dp)
             ),
         shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surface // Replaces White
+        color = MaterialTheme.colorScheme.surface
     ) {
         Column {
             Box(
@@ -243,26 +262,27 @@ fun BookCard(book: Book, onClick: () -> Unit) {
             ) {
                 val imageUrl = book.imageLinks?.thumbnail
                 if (!imageUrl.isNullOrEmpty()) {
-                    AsyncImage(
+                    GlideImage(
                         model = imageUrl,
                         contentDescription = "Book Cover",
-                        contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize(),
-                        placeholder = painterResource(id = R.drawable.err),
-                        error = painterResource(id = R.drawable.err)
-                    )
+                        contentScale = ContentScale.Crop
+                    ) {
+                        it.placeholder(R.drawable.placeholder)
+                            .error(R.drawable.err)
+                    }
                 } else {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)), // Replaces Line
+                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.err),
                             contentDescription = "No Image",
                             modifier = Modifier.size(60.dp),
-                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) // Replaces MainColor
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                         )
                     }
                 }
@@ -274,7 +294,7 @@ fun BookCard(book: Book, onClick: () -> Unit) {
                             brush = Brush.verticalGradient(
                                 colors = listOf(
                                     Color.Transparent,
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f) // Replaces Black
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
                                 ),
                                 startY = 100f
                             )
@@ -293,7 +313,7 @@ fun BookCard(book: Book, onClick: () -> Unit) {
                         ),
                         contentDescription = if (isSaved) "Unsave" else "Save",
                         modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.primary // Replaces MainColor
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -310,7 +330,7 @@ fun BookCard(book: Book, onClick: () -> Unit) {
                         fontWeight = FontWeight.Bold,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onSurface // Replaces Black
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
@@ -318,7 +338,7 @@ fun BookCard(book: Book, onClick: () -> Unit) {
                     Text(
                         text = book.authors?.joinToString(", ") ?: "Unknown Author",
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), // Replaces Line
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -328,6 +348,7 @@ fun BookCard(book: Book, onClick: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun ShowCard(show: Show, onClick: () -> Unit) {
     var isSaved by remember { mutableStateOf(false) }
@@ -339,11 +360,11 @@ fun ShowCard(show: Show, onClick: () -> Unit) {
             .clickable(onClick = onClick)
             .border(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.outline, // Replaces Color.LightGray
+                color = MaterialTheme.colorScheme.outline,
                 shape = RoundedCornerShape(12.dp)
             ),
         shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surface // Replaces White
+        color = MaterialTheme.colorScheme.surface
     ) {
         Column {
             Box(
@@ -352,26 +373,27 @@ fun ShowCard(show: Show, onClick: () -> Unit) {
                     .height(140.dp)
             ) {
                 if (show.poster_path != null) {
-                    AsyncImage(
+                    GlideImage(
                         model = "https://image.tmdb.org/t/p/w500${show.poster_path}",
                         contentDescription = "Show Poster",
                         modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
-                        placeholder = painterResource(id = R.drawable.err),
-                        error = painterResource(id = R.drawable.err)
-                    )
+                        contentScale = ContentScale.Crop
+                    ) {
+                        it.placeholder(R.drawable.placeholder)
+                            .error(R.drawable.err)
+                    }
                 } else {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)), // Replaces Line
+                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.err),
                             contentDescription = "No Image",
                             modifier = Modifier.size(60.dp),
-                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) // Replaces MainColor
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                         )
                     }
                 }
@@ -383,7 +405,7 @@ fun ShowCard(show: Show, onClick: () -> Unit) {
                             brush = Brush.verticalGradient(
                                 colors = listOf(
                                     Color.Transparent,
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f) // Replaces Black
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
                                 ),
                                 startY = 100f
                             )
@@ -402,7 +424,7 @@ fun ShowCard(show: Show, onClick: () -> Unit) {
                         ),
                         contentDescription = if (isSaved) "Unsave" else "Save",
                         modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.primary // Replaces MainColor
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -419,7 +441,7 @@ fun ShowCard(show: Show, onClick: () -> Unit) {
                         fontWeight = FontWeight.Bold,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onSurface // Replaces Black
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
@@ -427,7 +449,7 @@ fun ShowCard(show: Show, onClick: () -> Unit) {
                     Text(
                         text = show.genreNames.joinToString(", ") ?: "Unknown Genre",
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), // Replaces Line
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -437,6 +459,7 @@ fun ShowCard(show: Show, onClick: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun TrackCard(track: Track, onClick: () -> Unit) {
     var isSaved by remember { mutableStateOf(false) }
@@ -448,11 +471,11 @@ fun TrackCard(track: Track, onClick: () -> Unit) {
             .clickable(onClick = onClick)
             .border(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.outline, // Replaces Color.LightGray
+                color = MaterialTheme.colorScheme.outline,
                 shape = RoundedCornerShape(12.dp)
             ),
         shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surface // Replaces White
+        color = MaterialTheme.colorScheme.surface
     ) {
         Column {
             Box(
@@ -461,26 +484,27 @@ fun TrackCard(track: Track, onClick: () -> Unit) {
                     .height(140.dp)
             ) {
                 if (track.album.images.isNotEmpty()) {
-                    AsyncImage(
+                    GlideImage(
                         model = track.album.images[0].url,
                         contentDescription = "Album Art",
                         modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
-                        placeholder = painterResource(id = R.drawable.music),
-                        error = painterResource(id = R.drawable.music)
-                    )
+                        contentScale = ContentScale.Crop
+                    ) {
+                        it.placeholder(R.drawable.placeholder)
+                            .error(R.drawable.music)
+                    }
                 } else {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)), // Replaces Line
+                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.music),
                             contentDescription = "Track Placeholder",
                             modifier = Modifier.size(60.dp),
-                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) // Replaces MainColor
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                         )
                     }
                 }
@@ -492,7 +516,7 @@ fun TrackCard(track: Track, onClick: () -> Unit) {
                             brush = Brush.verticalGradient(
                                 colors = listOf(
                                     Color.Transparent,
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f) // Replaces Black
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
                                 ),
                                 startY = 100f
                             )
@@ -511,7 +535,7 @@ fun TrackCard(track: Track, onClick: () -> Unit) {
                         ),
                         contentDescription = if (isSaved) "Unsave" else "Save",
                         modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.primary // Replaces MainColor
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -528,7 +552,7 @@ fun TrackCard(track: Track, onClick: () -> Unit) {
                         fontWeight = FontWeight.Bold,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onSurface // Replaces Black
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
@@ -536,7 +560,7 @@ fun TrackCard(track: Track, onClick: () -> Unit) {
                     Text(
                         text = track.getArtistsString(),
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), // Replaces Line
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -544,4 +568,74 @@ fun TrackCard(track: Track, onClick: () -> Unit) {
             }
         }
     }
+}
+
+@Composable
+fun PlaceholderCard() {
+    Surface(
+        modifier = Modifier
+            .width(140.dp)
+            .height(220.dp)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline,
+                shape = RoundedCornerShape(12.dp)
+            ),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Column {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(140.dp)
+                    .shimmer()
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.8f)
+                            .height(16.dp)
+                            .shimmer()
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.5f)
+                            .height(12.dp)
+                            .shimmer()
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun Modifier.shimmer(): Modifier {
+    var offset by remember { mutableStateOf(0f) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            offset += 0.02f
+            if (offset > 1.2f) offset = -0.2f
+            delay(16)
+        }
+    }
+    return this.background(
+        brush = Brush.linearGradient(
+            colors = listOf(
+                MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+                MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+            ),
+            start = Offset(offset * 1000f, 0f),
+            end = Offset((offset + 0.4f) * 1000f, 0f)
+        )
+    )
 }

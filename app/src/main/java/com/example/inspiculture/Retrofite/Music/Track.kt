@@ -53,6 +53,7 @@ data class Track(
     val id: String,
     val name: String,
     val artists: List<Artist>,
+    val isFavoris: Boolean,
     val album: Album
 ) {
     fun getArtistsString() = artists.joinToString(", ") { it.name }
